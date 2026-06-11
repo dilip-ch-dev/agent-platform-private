@@ -4,7 +4,7 @@
 
 We are building a reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
 
-The goal is not to pre-build the final event product. The goal is to pre-build the reusable foundation so that, once the sponsor problem statement is released, we can adapt corpus, tools, workflow, and UI quickly.
+The goal is to pre-build the reusable foundation so that, once the sponsor problem statement is released, we can adapt corpus, tools, workflow, and UI quickly.
 
 ## What is locked
 
@@ -110,8 +110,6 @@ Done means:
 
 - Do not build Governance OS in this repo right now.
 - Do not build VisaPilot as the default app right now.
-- Do not rebuild GlassHire.
-- Do not add Next.js in Phase 0.
 - Do not hard-code any LLM provider.
 - Do not create disconnected mini-apps.
 - Do not optimize UI before the API contract works.
@@ -122,5 +120,4 @@ Done means:
 - Decisions go into `docs/DECISIONS.md`.
 - Architecture changes go into `docs/ARCHITECTURE.md`.
 - Team ownership goes into `docs/TEAM.md` or Linear/GitHub issues.
-- Cursor/Claude Code should implement small tickets only.
-- Chat threads are for review and clarification, not permanent memory.
+- Claude/coding agents should implement small tickets only.
