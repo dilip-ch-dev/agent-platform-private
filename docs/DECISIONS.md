@@ -7,9 +7,7 @@ Append-only. New decisions go here, not into chat threads.
 - Skeleton is the priority asset: reusable, provider-agnostic trusted-agent platform.
 - Event-day submission remains problem-statement-driven.
 - VisaPilot is a prepared demo skin, not a locked event submission.
-- Governance OS / EvidencePack is Lucky's personal flagship and separate from the shared team skeleton.
 - GlassHire/recruiting matcher is superseded and should not drive repo architecture.
-- Repo is the source of truth. Chat threads are not permanent memory.
 
 ## 2026-06-11
 
