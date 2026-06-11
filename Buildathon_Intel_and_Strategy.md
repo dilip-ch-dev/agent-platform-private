@@ -1,10 +1,10 @@
 # Buildathon Dallas 2026 — Intel & Strategy (Source of Truth)
 
-**Owner:** Lucky · **Role:** AI/ML engineer (builder) · **Goal:** Win a track + get recruited
-**Prep window:** ~30–40 hrs before June 18 · **Team:** 2 now, forming more on-site
-**Last updated:** 2026-06-09 · **Maintained by:** Claude (Cowork)
+**Owner:** Team · **Role:** AI/ML engineer (builder) · **Goal:** Win a track + get recruited
+**Prep window:** ~25 hrs before June 18 ·
+**Last updated:** 2026-06-09 · 
 
-> This is the single source of truth. Update it as facts change. Load it into Cursor at the
+> This is the single source of truth. Update it as facts change. Load it into coding agents/preferred IDEs at the
 > start of every build session so context stays consistent and we don't re-derive or hallucinate.
 
 ---
@@ -180,8 +180,7 @@ strong runner-up and the better pure-recruiting play. **Decision is yours — se
 
 ## 9. How we work (workflow guardrails)
 - This `.md` is the source of truth. New facts → update here, not buried in chat.
-- Keep this chat for decisions; do heavy iterative coding in Cursor to save context + credits.
-- Cowork preview pins the session model (Opus 4.8) — can't switch per-message like normal chat; expected, not a bug.
+- Keep this chat for decisions; do heavy iterative coding in IDEs/agents to save context + credits.
 - I keep a visible task list so progress is always legible.
 
 ## 10. Sources
