@@ -77,8 +77,6 @@ Goal: adapt the working skeleton to the sponsor problem statement.
 Possible skins:
 
 - sponsor problem statement skin, chosen on event day
-- VisaPilot, only if aligned
-- Governance OS, Lucky's separate personal flagship
 
 ## Parallel work
 
