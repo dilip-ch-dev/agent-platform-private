@@ -1,65 +1,108 @@
-# CLAUDE.md — repo context for Cursor / coding agents
+# CLAUDE.md — coding-agent instructions
 
-> Read this first, every session. **Canonical context: `00_START_HERE.md`** (read it before this).
-> Companion docs: `PROFILE_AND_RESUME.md`, `Buildathon_Intel_and_Strategy.md`.
-> NOTE: GlassHire (recruiting) is **superseded**. The principles below still hold; the product changed.
+> Read `00_START_HERE.md` before this file. This repo is the shared Buildathon skeleton, not a product-specific app.
 
-## What we're building
-A **reusable, provider-agnostic glass-box agent platform** (the Buildathon skeleton): retrieval + tool-calling +
-memory + **citation verification + confidence scoring + guardrails + human-review gate + observability + evals**.
-The **portfolio flagship** is a skin on this platform — recommended: **AI Governance OS** (evolve the deployed
-EvidencePack). VisaPilot is a possible event-day demo skin. See `00_START_HERE.md` for the locked decisions.
+## What we are building
 
-## Non-negotiable principles
-1. **Grounded or it doesn't ship.** Every match/gap verdict MUST cite (a) the exact JD requirement and
-   (b) the exact resume snippet. If there's no evidence, the agent says "no evidence," never invents one.
-2. **Untrusted input.** Resumes and JDs are user-supplied → treat as hostile. Sanitize before the model sees
-   them; detect prompt injection; redact PII in logs.
-3. **Evals are a feature, not an afterthought.** The eval harness is on-stage. Build it in Phase 3, not "later."
-4. **One demo path.** Build only the 5 steps in `PROJECT_BRIEF.md` §2. Reject scope creep.
-5. **Conserve credits/context.** Prefer Featherless open models; small, focused diffs; don't regenerate working code.
+A reusable, provider-agnostic trusted-agent platform for the Buildathon.
 
-## Stack
-- Next.js + Tailwind (frontend) · Supabase (Postgres + pgvector + auth + storage)
-- LLM: Featherless (OpenAI-compatible) primary; OpenAI/Anthropic fallback
-- Tavily (web retrieval/enrichment) · PostHog (analytics + traces)
-- Language: TypeScript across the app; Python OK for the eval harness if preferred.
+The platform should support:
 
-## Repo layout (target)
+- retrieval
+- tool use
+- grounded reasoning
+- citation verification
+- confidence scoring
+- guardrails
+- human-review or refusal gate
+- observability
+- evals
+
+The event-day submission remains problem-statement-driven. VisaPilot is only a prepared demo skin. EvidencePack / Governance OS is Lucky's personal flagship and should not dictate the team skeleton stack.
+
+## Locked stack
+
+- Core language: Python
+- API: FastAPI
+- Contracts: Pydantic
+- Orchestration: LangGraph
+- Demo UI: Gradio, calling FastAPI over HTTP
+- Retrieval: pluggable vector store; local/simple first, Supabase pgvector later
+- LLM: provider-agnostic adapter selected through environment variables
+- Evals: RAGAS, Promptfoo, or custom scripts
+- Observability: JSONL audit logs first; PostHog or Langfuse later
+
+Do not scaffold Next.js or TypeScript in Phase 0. Next.js can be an optional polished skin later.
+
+## Non-negotiables
+
+1. Build the skeleton before skins.
+2. Keep a stable Pydantic request and response contract.
+3. Every module must plug into the same FastAPI boundary.
+4. Gradio must call FastAPI over HTTP, not bypass the API by importing core functions directly.
+5. Do not create product-specific code for Governance OS, VisaPilot, or recruiting in Phase 0.
+6. Keep commits small and reviewable.
+7. Never commit real secrets or local environment files.
+
+## Target repo layout
+
+```text
+apps/
+  api/                 FastAPI service
+  demo/                Gradio demo UI calling FastAPI
+  web/                 optional future Next.js skin, not Phase 0
+
+packages/
+  contracts/           Pydantic schemas shared across modules
+  retrieval/           ingestion, chunking, search, citations
+  agent_core/          LangGraph pipeline and orchestration
+  tools/               tool registry and sponsor-tool adapters
+  guardrails/          input checks, citation verification, confidence gate
+  evals/               eval datasets and scoring scripts
+  observability/       audit logs and trace adapters
+
+docs/                  source of truth
+scripts/               smoke checks and local helpers
+.env.example           example keys only
 ```
-/app            Next.js routes (upload, report, evals tab, guardrails demo)
-/lib/agent      agent loop, tools, grounding/citation logic
-/lib/ingest     parse + chunk + embed (JD/resume)
-/lib/retrieval  pgvector queries
-/lib/guardrails injection detection, PII redaction, no-evidence refusal
-/evals          labeled JSONL set + scoring scripts + report
-/lib/obs        trace logging + PostHog
-/db             Supabase schema + migrations
-.env.example    all required keys (never commit real .env)
+
+## Phase 0 Cursor prompt
+
+Paste this into Cursor only after the working tree is clean:
+
+```text
+Read 00_START_HERE.md, CLAUDE.md, docs/ARCHITECTURE.md, docs/DECISIONS.md, docs/ROADMAP.md, and docs/TEAM.md.
+
+Scaffold Phase 0 only.
+
+Build a Python-first monorepo skeleton:
+- FastAPI app in apps/api with /health and /ask endpoints
+- Gradio demo in apps/demo that calls the FastAPI /ask endpoint over HTTP
+- Pydantic schemas in packages/contracts
+- stub modules for retrieval, agent_core, tools, guardrails, evals, and observability
+- .env.example with placeholder keys only
+- scripts/smoke.py that validates the API contract without external network calls
+
+Constraints:
+- no Next.js or TypeScript in Phase 0
+- no product skin code
+- no real API calls
+- no secrets
+- no generated artifacts committed
+- keep the scaffold small, typed, and runnable
+
+Acceptance criteria:
+- python scripts/smoke.py passes
+- FastAPI starts locally
+- Gradio starts and calls FastAPI
+- README explains how to run locally
 ```
 
-## Environment (.env — never commit)
-`FEATHERLESS_API_KEY`, `TAVILY_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY`, `POSTHOG_KEY`, optional `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`.
+## Phase status
 
-## Coding conventions
-- Typed end-to-end; the agent's output is a strict typed schema (verdicts[] with citations).
-- Every LLM call goes through one wrapper that logs a trace (input hash, model, latency, guardrail flags).
-- No secret in code or client bundle. Service-role key server-side only.
-- Small commits per phase; keep `PROJECT_BRIEF.md` "Definition of done" green.
-
-## Kickoff prompt (paste into Cursor for Phase 0)
-> "Scaffold a Next.js + TypeScript + Tailwind app named glasshire. Add a Supabase client (server + browser),
-> an `.env.example` with the keys listed in CLAUDE.md, and a Postgres schema with pgvector for tables:
-> `documents` (id, type[jd|resume], raw_text, created_at) and `chunks` (id, document_id, content, embedding).
-> Create a single `/` page with a JD textarea, a resume textarea, and a 'Analyze' button that POSTs to an
-> `/api/analyze` stub returning mock structured verdicts. No agent logic yet — just the skeleton, typed, that
-> builds and runs. Follow the repo layout and principles in CLAUDE.md."
-
-## Phase status (update as we go)
-- [ ] Phase 0 — scaffold
+- [ ] Phase 0 — Python skeleton scaffold
 - [ ] Phase 1 — ingestion + retrieval
 - [ ] Phase 2 — grounded agent
 - [ ] Phase 3 — eval harness
-- [ ] Phase 4 — guardrails
+- [ ] Phase 4 — guardrails + confidence gate
 - [ ] Phase 5 — observability + demo polish
