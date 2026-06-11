@@ -73,3 +73,26 @@ Phase 0 is complete when:
 - provider-specific hard-coded runtime
 
 Those are skins or later phases. Skeleton first.
+
+## Run locally
+
+Prerequisites: Python 3.11 and [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync
+uv run python scripts/smoke.py
+```
+
+Start the API:
+
+```bash
+uv run uvicorn apps.api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Start the Gradio demo (in a second terminal, with the API running):
+
+```bash
+uv run python apps/demo/app.py
+```
+
+Copy `.env.example` to `.env` and fill in placeholder values as needed. Do not commit `.env`.
