@@ -4,7 +4,7 @@ This file captures the current team task direction. It is intentionally module-b
 
 ## Execution order
 
-Do not start with four developers coding separate RAG pieces immediately. First create the base structure.
+Starting with the base structure.
 
 1. Create `development` branch from `main`.
 2. Create one setup branch from `development`.
@@ -44,8 +44,6 @@ feature/rag-retrieval-api
 Avoid one shared `rag` branch where everyone commits directly. That creates merge pain and hidden overwrites.
 
 ## Phase 0 setup task
-
-Owner: one developer initially. Others should wait for this branch to merge before writing module code.
 
 ### Goal
 
