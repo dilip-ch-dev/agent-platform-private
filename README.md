@@ -2,7 +2,7 @@
 
 Reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
 
-This repo is the shared team foundation. It is not the final event-day product, not a product-specific app.
+This repo is the shared team foundation.
 
 ## What we are building
 
@@ -31,7 +31,7 @@ Read these in order:
 
 1. `PROJECT.md` — team-facing overview
 2. `00_START_HERE.md` — canonical context
-3. `CLAUDE.md` — instructions for Cursor / coding agents
+3. `CLAUDE.md` — instructions for coding agents
 4. `docs/ARCHITECTURE.md` — technical architecture
 5. `docs/TEAM.md` — collaboration model
 6. `docs/ROADMAP.md` — phase plan
@@ -49,7 +49,6 @@ Read these in order:
 - JSONL audit logs first
 - optional PostHog/Langfuse later
 
-Next.js is not part of Phase 0. It can be added later as a polished skin if needed.
 
 ## Phase 0 target
 
