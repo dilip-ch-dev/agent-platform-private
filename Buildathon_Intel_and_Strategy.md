@@ -134,7 +134,7 @@
 ## 6. Flagship candidates (decision pending — your call)
 
 Scored 1–5 on: **Overlap** (with likely problem statements), **Recruit** (appeal to hiring judges),
-**Buildable** (in 30–40 hrs with heavy guidance), **Judge-fit** (resonance with the room's thesis).
+**Buildable** (in 30 hrs with heavy guidance), **Judge-fit** (resonance with the room's thesis).
 
 ### Candidate A — "Glass-box agent platform": a reliable agent + eval + guardrail harness
 A vertical agent (e.g., over support docs or live web) shipped **with** an automatic eval suite,
