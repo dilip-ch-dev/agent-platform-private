@@ -2,7 +2,7 @@
 
 Reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
 
-This repo is the shared team foundation. It is not the final event-day product, not Lucky's private profile workspace, and not a product-specific app.
+This repo is the shared team foundation. It is not the final event-day product, not a product-specific app.
 
 ## What we are building
 
