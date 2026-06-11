@@ -1,38 +1,76 @@
-# TEAM
+# TEAM — collaboration model
 
-3 now (forming more on-site). No professional-level expertise → heavy AI assist (Cursor/Claude Code) for
-production orchestration, integration, and execution. Fill names/handles before the event.
+We are preparing for a 4-person-ish team where each person may only have 4–5 focused hours before the event. Nobody should build a disconnected mini-app.
 
-## Members & ownership (one integrated repo, modular ownership, merge continuously — NOT on event day)
-| Member | Handle | Strength | Owns | Backup |
-|---|---|---|---|---|
-| _TBD_ | _TBD_ | Backend | `lib/agent`, `lib/llm`, Supabase, deploy | retrieval |
-| _TBD_ | _TBD_ | Agentic workflow | `lib/retrieval`, `lib/tools`, `lib/governance` | evals |
-| _TBD_ | _TBD_ | Frontend | `app/` UI, both skins, workflow UX | obs dashboard |
-| _on-site_ | — | TBD | evals/observability or deploy | — |
+## Principle
 
-> With only 3, evals/observability is shared; whoever finishes their slice first picks it up.
+One integrated repo. Modular ownership. Merge continuously.
+
+The team can split work, but every slice must plug into the same FastAPI + Pydantic contract.
 
 ## Repo
-- Org: `github.com/<buildathon-team>` · Repo: `skeleton-platform` (skins as `app/governance-os`, `app/visapilot` or branches).
-- `/docs` = source of truth (VISION, ARCHITECTURE, DECISIONS, ROADMAP, TEAM). `CLAUDE.md` at root for coding agents.
-- Board: GitHub Projects — TODO / IN PROGRESS / REVIEW / DONE.
 
-## Conventions
-- Small PRs, reviewed, merged daily. No long-lived branches.
-- Every decision → `DECISIONS.md` (not chat). Every architecture change → `ARCHITECTURE.md`.
-- All LLM calls go through `lib/llm` (one wrapper, one trace). Never hardcode a provider.
-- Secrets in `.env` only (service-role key server-side). Never commit real `.env`.
-- Definition of done per slice: typed, traced, has at least one eval/test, merged.
+- Org: `buildathon-labs`
+- Repo: `agent-platform`
+- Source of truth: `/docs`, `PROJECT.md`, `CLAUDE.md`
+- Work tracking: Linear or GitHub Issues
+- Communication: Slack or equivalent
 
-## Tooling
-- **Cursor / Claude Code** — write code, in-repo. Primary.
-- **Cowork** — architecture, planning, project memory.
-- **ChatGPT** — adversarial review (recruiter/judge/investor lens).
-- **v0 / Lovable / Bolt** — frontend shells only; wire to backend in Cursor.
+## Natural work slices
+
+Do not assign names here yet. Turn these into Linear/GitHub issues when the team confirms availability.
+
+| Slice | What it owns | Example 4–5 hour outcome |
+|---|---|---|
+| API + contracts | FastAPI, Pydantic schemas, `.env.example`, smoke test | `/health` and `/ask` return valid schema responses |
+| Retrieval | ingestion, chunking, citation objects, search interface | mock/local retrieval returns chunks with source metadata |
+| Agent orchestration | LangGraph state, reasoning node, tool registry | pipeline shell runs from request to mock answer |
+| Governance + guardrails | input checks, citation verification, confidence score, refusal gate | weak evidence produces low confidence/refusal path |
+| Demo + evals + observability | Gradio UI, audit log, small eval set | UI calls API and displays answer, citations, confidence, trace ID |
+
+## How to work remotely
+
+1. Pull latest `main` before starting.
+2. Pick one small issue.
+3. Create a branch for that issue.
+4. Make the smallest working change.
+5. Run the smoke test.
+6. Open a PR.
+7. Merge early after review.
+
+No long-lived branches. No private local masterpieces. No parallel rewrites.
+
+## Definition of done for any slice
+
+A slice is not done because files exist. It is done when:
+
+- it plugs into the shared contract
+- it runs locally
+- it has a smoke check or minimal test
+- it does not introduce real secrets
+- it is merged into `main`
+- the next teammate can build on it without asking for hidden context
+
+## Suggested issue labels
+
+- api
+- contracts
+- retrieval
+- agent-core
+- tools
+- guardrails
+- evals
+- observability
+- demo-ui
+- docs
+- deployment
+- blocked
 
 ## Pre-event checklist
-- [ ] Names/handles filled above · org + repo created · everyone has access
-- [ ] Each member cloned, ran skeleton locally, made one merged PR
-- [ ] `$3k` credit providers confirmed + keys in shared `.env` plan
-- [ ] Skeleton deployed; Governance OS live; VisaPilot demoable
+
+- [ ] Everyone has repo access.
+- [ ] Everyone can clone and run the repo.
+- [ ] Phase 0 smoke test passes on at least two machines.
+- [ ] Each member has made one small PR.
+- [ ] API credit keys are documented in `.env.example`, not committed.
+- [ ] Skeleton has one deployed or locally demoable end-to-end path.
