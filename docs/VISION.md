@@ -3,7 +3,6 @@
 ## What we're building
 A **reusable, provider-agnostic glass-box agent platform** — the team's pre-built Buildathon foundation —
 and two skins that ride on it:
-- **Governance OS** (Lucky's personal flagship; evolves the deployed EvidencePack).
 - **VisaPilot** (team project; grounded immigration copilot).
 
 The platform is **the locked asset**. Skins are ~10–15% on top (corpus + tools + UI + workflow) — *but only
