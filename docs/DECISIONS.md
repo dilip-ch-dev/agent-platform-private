@@ -1,22 +1,29 @@
-# DECISIONS (ADR log)
+# DECISIONS
 
-Append-only. New decisions flow here, not into chat threads. Format: date · decision · why.
+Append-only. New decisions go here, not into chat threads.
 
 ## 2026-06-10
-- **Skeleton is the priority asset.** Reusable, provider-agnostic glass-box agent platform. Build once;
-  skins ride on it. Rationale: maximizes event-day adaptability; directly showcases the team's/Lucky's strengths.
-- **Flagship split (same skeleton underneath):**
-  - Lucky personal = **AI Governance OS** (evolve deployed EvidencePack). Compounds resume; judge-native; fastest to portfolio-ready (already live) → build first.
-  - **VisaPilot = prepared demo skin, NOT a locked event submission** (rev. 06-10). Deploy only if the assigned sponsor problem aligns. Event submission stays problem-statement-driven; adapt the skeleton on-site.
-- **"Skins are ~10–15%" holds ONLY if the skeleton is continuously integrated/merged.** Modules built in isolation → skins become ~60% pain. Integrate end-to-end before the event.
-- **GlassHire (recruiting matcher) — KILLED.** Weaker than Lucky's existing resume narrative.
-- **Also eliminated:** creator/"AI junior", personal-admin agent, health concierge, SponsorshipOS. Don't compound the governance story / red oceans.
-- **Track selection = metadata, not architecture.** Pick the track matching the flagship's center of gravity (Evals & Testing / Security & Guardrails / RAG). Don't let it drive design.
-- **Workflow:** repo = source of truth; `/docs` canonical. Cursor/Claude Code = code. Cowork = architecture/PM. ChatGPT = adversarial review. No-code builders = frontend only.
-- **Provider-agnostic LLM + pluggable vector store** so the $3k event credits drop in via env.
-- **Enemy named: decision thrash.** No new flagship candidates; each would have to beat both locked skins.
+
+- Skeleton is the priority asset: reusable, provider-agnostic trusted-agent platform.
+- Event-day submission remains problem-statement-driven.
+- VisaPilot is a prepared demo skin, not a locked event submission.
+- Governance OS / EvidencePack is Lucky's personal flagship and separate from the shared team skeleton.
+- GlassHire/recruiting matcher is superseded and should not drive repo architecture.
+- Repo is the source of truth. Chat threads are not permanent memory.
+
+## 2026-06-11
+
+- Core stack is Python-first: FastAPI + LangGraph + Pydantic.
+- Default demo UI is Gradio calling FastAPI over HTTP.
+- Next.js is optional later as a polished UI skin, not Phase 0.
+- Phase 0 must produce a runnable skeleton with stable contracts and stubbed modules, not a finished product.
+- Team work should be split by module slices, but each slice must merge into the same end-to-end API flow.
+- JSONL audit logs come before optional PostHog/Langfuse integration.
+- Simple/local retrieval comes before pgvector/Supabase integration.
+- API-credit providers are useful but must remain behind provider adapters; do not hard-code architecture around any single provider.
 
 ## Pending
-- Confirm $3k credits coverage (providers/tools) when organizer updates.
-- Venue (Fairview vs Irving) — Lucky handling.
-- Profile-cleanup workstream — separate thread, after migration.
+
+- Final team member names/handles.
+- Final issue assignment after the team reviews `PROJECT.md` and `docs/TEAM.md`.
+- Event-day track/problem statement.
