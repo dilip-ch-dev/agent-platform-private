@@ -1,45 +1,115 @@
-# ARCHITECTURE — glass-box agent platform (skeleton)
+# ARCHITECTURE — trusted-agent skeleton
 
-Provider-agnostic. Build once; skins swap **corpus + tools + UI + workflow** only (~85% shared).
+Provider-agnostic. Build once; adapt later.
 
-## Data flow (10 stages)
-```
-Request
-  → Context builder      (user profile, history, memory, project state → AgentContext)
-  → Intent router        (need retrieval? tools? memory? workflow? human review?)
-  → Retrieval pipeline   (query expand → embed → vector search → rerank → context select)
-  → Tool layer           (Tavily, parsers, calculators, custom — via ToolRegistry)
-  → Reasoning layer      (LLM → draft_answer + citations + confidence)
-  → Governance layer     (citation VERIFICATION, confidence scoring, guardrails: injection/PII/jailbreak)
-  → Human-review gate     (confidence < threshold → refuse / route to reviewer)
-  → Response
-  → Observability        (prompt, docs, tool calls, latency, cost, decision, outcome)
-  → Evals                (Promptfoo / RAGAS / regression — every request feeds the harness)
-```
-
-## Module boundaries (own one each)
-- `lib/llm` — **provider-agnostic** LLM client (OpenAI/Anthropic/Gemini/Featherless behind one interface; switch via env). All calls go through ONE wrapper that logs a trace.
-- `lib/retrieval` — embeddings, vector search (pgvector), reranking, context selection.
-- `lib/tools` — ToolRegistry; Tavily + document parsers + custom tools.
-- `lib/agent` — orchestrator (LangGraph), intent router, reasoning loop.
-- `lib/governance` — citation verification, confidence scoring, guardrails, human-review routing.
-- `lib/obs` — trace logging + PostHog/Langfuse.
-- `evals/` — labeled sets + scoring + regression (Promptfoo/RAGAS).
-- `app/` — UI (skin-specific).
+The skeleton is the shared team asset. Skins change corpus, tools, workflow, and UI. The core platform should remain stable.
 
 ## Default stack
-FastAPI and/or Next.js · Supabase (Postgres + pgvector) · LangGraph · Tavily · provider-agnostic LLM layer ·
-Promptfoo/RAGAS · PostHog (or Langfuse) · Vercel + container host (Railway/Fly/Render) · GitHub Actions.
 
-## Contracts (keep stable so skins don't break the core)
-- Agent output is a **strict typed schema**: `verdicts[] | answer` + `citations[]` + `confidence` + `flags[]`.
-- "No evidence → refuse" is a first-class path, not an error.
-- Every LLM call: one wrapper, one trace (input hash, model, latency, cost, guardrail flags).
+- Core API: FastAPI
+- Language: Python
+- Contracts: Pydantic
+- Orchestration: LangGraph
+- Demo UI: Gradio calling FastAPI over HTTP
+- Retrieval: pluggable vector interface; local/simple first, Supabase pgvector upgrade path
+- Tools: provider adapters, including Tavily where domain rules allow external search
+- LLM: provider-agnostic adapter selected by environment variables
+- Evals: RAGAS, Promptfoo, or custom scripts
+- Observability: JSONL audit logs first; PostHog or Langfuse later
 
-## Skin deltas
-- **Governance OS:** corpus = regulations/policies; tools = compliance workflows; UI = governance dashboard; gate = reviewer approval.
-- **VisaPilot:** corpus = USCIS/DHS .gov; tools = visa/deadline tools; UI = case dashboard; gate = refuse on low confidence.
+Next.js is optional later as a polished UI skin. It is not Phase 0.
 
-## $3k credits
-Unknown which providers are covered. The provider-agnostic `lib/llm` + pluggable vector store means whatever
-they give (LLMs, vector DB) drops in via env — no rework.
+## Data flow
+
+```text
+Request
+  -> API boundary
+  -> Context builder
+  -> Intent router
+  -> Input guardrail
+  -> Retrieval pipeline
+  -> Tool layer
+  -> Reasoning layer
+  -> Governance layer
+  -> Human-review or refusal gate
+  -> Response
+  -> Observability
+  -> Evals
+```
+
+## Module boundaries
+
+```text
+apps/api
+  FastAPI service. Owns HTTP boundary, /health, /ask, validation, and OpenAPI docs.
+
+apps/demo
+  Gradio demo. Calls FastAPI over HTTP. Does not bypass the API by importing the core directly.
+
+apps/web
+  Optional future Next.js skin. Not Phase 0.
+
+packages/contracts
+  Shared Pydantic schemas. This is the frozen contract between API, agent, retrieval, governance, and UI.
+
+packages/retrieval
+  Ingestion, chunking, search, source locators, citation objects, vector-store abstraction.
+
+packages/agent_core
+  LangGraph pipeline, state model, intent routing, reasoning node.
+
+packages/tools
+  ToolRegistry and adapters for sponsor tools or custom tools.
+
+packages/guardrails
+  Input checks, citation verification, confidence scoring, refusal or review routing.
+
+packages/evals
+  Small labeled sets, scoring scripts, RAGAS/Promptfoo adapters.
+
+packages/observability
+  JSONL audit log, trace adapters, latency/cost metadata.
+```
+
+## Stable contracts
+
+The agent response must be a strict schema with:
+
+- answer or verdicts
+- citations
+- confidence
+- flags
+- refusal/review status when evidence is weak
+
+No-evidence is a valid outcome, not an application error.
+
+## Phase 0 architecture goal
+
+Phase 0 should create runnable stubs behind stable contracts, not a finished product.
+
+Acceptance criteria:
+
+- FastAPI boots.
+- Gradio boots.
+- Gradio calls FastAPI over HTTP.
+- `/ask` returns a valid mock response.
+- smoke test passes without external network calls.
+- no product-specific skin code is added.
+
+## Skin deltas later
+
+Governance OS:
+- corpus = regulations, policies, AI-system evidence
+- tools = compliance workflows
+- UI = governance dashboard
+- gate = reviewer approval or evidence gap
+
+VisaPilot:
+- corpus = official immigration sources
+- tools = visa/deadline helpers
+- UI = case dashboard
+- gate = cite or refuse
+
+Event-day product:
+- adapt the skeleton to the sponsor problem statement
+- do not force-fit a prebuilt skin
