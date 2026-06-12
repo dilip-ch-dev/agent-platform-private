@@ -19,6 +19,10 @@ Append-only. New decisions go here, not into chat threads.
 - JSONL audit logs come before optional PostHog/Langfuse integration.
 - Simple/local retrieval comes before pgvector/Supabase integration.
 - API-credit providers are useful but must remain behind provider adapters; do not hard-code architecture around any single provider.
+- RAG implementation must start with shared Pydantic contracts (`packages/contracts/rag.py`) before extractor, chunking, embedding, or retrieval branches merge.
+- Existing `Locator` remains position-only for `Citation` compatibility; RAG models reference it, not replace it.
+- `RetrievalResult.score` is a normalized relevance score from 0.0 to 1.0; higher is better.
+- Provider-specific vector store fields must remain optional and provider-neutral (e.g. `vector_id`, `embedding_model` optional on `StoredChunk`).
 
 ## Pending
 
