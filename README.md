@@ -30,8 +30,8 @@ The event problem statement will be released on-site. Instead of guessing the fi
 Read these in order:
 
 1. `PROJECT.md` — team-facing overview
-2. `00_START_HERE.md` — canonical context
-3. `CLAUDE.md` — instructions for coding agents
+2. `docs/00_START_HERE.md` — canonical context
+3. `docs/CLAUDE.md` — instructions for coding agents
 4. `docs/ARCHITECTURE.md` — technical architecture
 5. `docs/TEAM.md` — collaboration model
 6. `docs/ROADMAP.md` — phase plan
