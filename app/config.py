@@ -1,12 +1,23 @@
+"""Single source of truth for all settings.
+
+Rules (see CLAUDE.md):
+- This is the ONLY module that reads environment / .env files.
+- Everywhere else: ``from app.config import cfg``.
+- Every tunable lives in .env and is exposed as a typed field here.
+"""
+
 import os
 from pathlib import Path
+from typing import Literal
 
-from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# ENV=production loads .env.production; anything else loads .env
 _ENV = os.getenv("ENV", "development")
-_env_file = f".env.{_ENV}" if Path(f".env.{_ENV}").exists() else ".env"
+_env_file = (
+    ".env.production" if _ENV == "production" and Path(".env.production").exists() else ".env"
+)
 
 
 class ModelParams(BaseModel):
@@ -25,8 +36,16 @@ class Config(BaseSettings):
 
     # API keys — empty string allowed so CI runs without real keys
     anthropic_api_key: str = ""
-    tavily_api_key: str = ""
     openai_api_key: str = ""
+    tavily_api_key: str = ""
+    featherless_api_key: str = ""
+
+    # LLM provider selection (provider-agnostic; flip via env, never via code)
+    # "anthropic"          -> langchain-anthropic
+    # "openai_compatible"  -> langchain-openai with a custom base_url
+    #                         (Featherless, event-credit providers, local servers)
+    llm_provider: Literal["anthropic", "openai_compatible"] = "anthropic"
+    openai_compatible_base_url: str = "https://api.featherless.ai/v1"
 
     # Models
     extraction_model: str
@@ -42,6 +61,14 @@ class Config(BaseSettings):
     confidence_threshold: float
     injection_threshold: float
     groundedness_threshold: float
+
+    # Guardrail modes
+    # flag_only: score and record, never block (use while tuning thresholds)
+    # block:     refuse the request when score >= injection_threshold
+    injection_mode: Literal["flag_only", "block"] = "block"
+
+    # Prompting
+    system_prompt: str = ""
 
     # Storage
     chroma_path: str
@@ -72,14 +99,33 @@ cfg = Config()
 
 
 class ModelRegistry:
-    """Returns a LangChain chat model configured for the given task."""
+    """Returns a LangChain chat model configured for the given task.
+
+    Provider-agnostic by design: the provider is chosen by ``LLM_PROVIDER``
+    in .env, so switching to event-credit providers (e.g. Featherless via
+    its OpenAI-compatible endpoint) is an env flip, not a code change.
+
+    LangChain imports are deliberately lazy so that importing app.config
+    never pulls heavy dependencies.
+    """
 
     @staticmethod
-    def get_model(task: str = "reasoning") -> BaseChatModel:
-        from langchain_anthropic import ChatAnthropic
-
+    def get_model(task: str = "reasoning"):
         params = cfg.extraction_params if task == "extraction" else cfg.reasoning_params
         model_id = cfg.extraction_model if task == "extraction" else cfg.reasoning_model
+
+        if cfg.llm_provider == "openai_compatible":
+            from langchain_openai import ChatOpenAI
+
+            return ChatOpenAI(
+                model=model_id,
+                temperature=params.temperature,
+                max_tokens=params.max_tokens,
+                base_url=cfg.openai_compatible_base_url,
+                api_key=cfg.featherless_api_key or cfg.openai_api_key,
+            )
+
+        from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(
             model=model_id,
