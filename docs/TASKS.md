@@ -28,6 +28,9 @@ development
 feature/setup-uv-project
   project structure, uv, base dependencies, smoke test
 
+feature/rag-contracts
+  shared RAG Pydantic contracts in packages/contracts/rag.py
+
 feature/rag-extractors
   PDF/TXT/CSV extractors and dispatcher
 
@@ -81,7 +84,33 @@ Create a runnable Python skeleton that all RAG tasks can plug into.
 
 ## RAG task slices
 
-The RAG pipeline can start after Phase 0 setup is merged into `development`.
+RAG work starts after Phase 0 is merged into `development`. `feature/rag-contracts` (RAG-0) must merge into `development` before Dev A/B/C/D start or merge their branches.
+
+## RAG-0 — Shared RAG Contracts
+
+### Goal
+
+Add shared Pydantic RAG contracts so Dev A/B/C/D build against the same data shapes.
+
+### Models (`packages/contracts/rag.py`)
+
+- `SupportedSourceType`
+- `ExtractedUnit`
+- `Chunk`
+- `StoredChunk`
+- `RetrievalResult`
+- `IngestResult`
+
+### Constraints
+
+- Existing `Locator` in `packages/contracts/schemas.py` remains position-only (`page`, `char_start`, `char_end`, `row`) and stays compatible with Phase 0 `Citation` and smoke tests.
+- No extractor, chunker, embedder, vector DB, or `/ingest` endpoint in RAG-0.
+
+### Acceptance criteria
+
+- [ ] Models exported from `packages/contracts/__init__.py`
+- [ ] Schema validation tests pass
+- [ ] Smoke test still passes
 
 ## Dev A — Extractors + Dispatcher
 
