@@ -1,6 +1,6 @@
 # CLAUDE.md — coding-agent instructions
 
-> Read `00_START_HERE.md` before this file. This repo is the shared Buildathon skeleton, not a product-specific app.
+> Read `docs/00_START_HERE.md` before this file. This repo is the shared Buildathon skeleton, not a product-specific app.
 
 ## What we are building
 
@@ -71,7 +71,7 @@ scripts/               smoke checks and local helpers
 Paste this into Cursor only after the working tree is clean:
 
 ```text
-Read 00_START_HERE.md, CLAUDE.md, docs/ARCHITECTURE.md, docs/DECISIONS.md, docs/ROADMAP.md, and docs/TEAM.md.
+Read docs/00_START_HERE.md, docs/CLAUDE.md, docs/ARCHITECTURE.md, docs/DECISIONS.md, docs/ROADMAP.md, and docs/TEAM.md.
 
 Scaffold Phase 0 only.
 
