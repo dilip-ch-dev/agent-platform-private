@@ -7,6 +7,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "pydantic>=2.0",
+    "pydantic-settings>=2.0",
     "python-dotenv>=1.0",
     "httpx>=0.27",
     # UI
@@ -32,6 +33,7 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "ruff>=0.8",
+    "pre-commit>=3.7",
 ]
 pipeline = [
     # NLI faithfulness gate
@@ -50,14 +52,45 @@ ner = [
 ]
 
 [project.scripts]
-dev   = "app.cli:dev"
-start = "app.cli:start"
-ui    = "app.cli:ui"
-smoke = "app.cli:smoke"
+# Namespaced so installing the wheel never shadows common binary names
+# like `dev` or `start` on a teammate's PATH.
+bt-dev   = "app.cli:dev"
+bt-start = "app.cli:start"
+bt-ui    = "app.cli:ui"
+bt-smoke = "app.cli:smoke"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["packages", "app", "ui", "eval"]
+packages = ["packages", "app", "ui", "evals"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["data"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Regex signal tables read better on one line each
+"app/guardrails/injection.py" = ["E501"]
+"app/guardrails/pii.py" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
