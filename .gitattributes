@@ -1,0 +1,15 @@
+# Normalize all text files to LF in the repo; checkout as-is.
+# This prevents CRLF/LF diff noise on mixed Windows/macOS/Linux teams.
+* text=auto eol=lf
+
+# Windows scripts that genuinely need CRLF
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary — never touch
+*.png binary
+*.jpg binary
+*.pdf binary
+*.parquet binary
+*.sqlite3 binary
+uv.lock text eol=lf -diff
