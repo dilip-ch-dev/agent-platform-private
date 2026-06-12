@@ -2,102 +2,63 @@
 
 Reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
 
-## What we are building
+## What works today
 
-A provider-agnostic agent platform with:
+- FastAPI API boundary (`/health`, `/ask`) with strict Pydantic contracts
+- Input guardrails wired into `/ask`: PII redaction + prompt-injection blocking
+- Groundedness verification utilities (lexical now, NLI optional, Tavily external check)
+- JSONL audit logging (raw PII mechanically rejected)
+- Gradio demo UI calling the API over HTTP
+- Eval corpus (30 rows) + harness; 91 tests; ruff + pytest + smoke in CI
 
-- FastAPI API boundary with Pydantic contracts
-- LangGraph orchestration pipeline
-- RAG — ingest, chunk, embed, retrieve (ChromaDB + sentence-transformers)
-- Guardrails — PII masking, injection detection, faithfulness gate (NLI)
-- Tool registry + Tavily external search
-- Confidence scoring and refusal gate
-- JSONL audit log and Langfuse observability
-- Gradio demo UI
+## What is planned (stubs in place)
+
+RAG ingest/retrieval (ChromaDB + sentence-transformers), LangGraph pipeline,
+auth/tenancy, tool registry. See `CLAUDE.md` for the status-marked breakdown.
 
 ## Stack
 
 | Layer | Technology |
 |---|---|
 | API | FastAPI + Uvicorn |
-| Contracts | Pydantic v2 |
-| Orchestration | LangGraph |
-| LLM | Anthropic Claude (via LangChain) |
-| Embeddings | sentence-transformers — all-MiniLM-L6-v2 |
-| Vector store | ChromaDB |
+| Contracts | Pydantic v2 (strict) |
+| Config | pydantic-settings — `.env` → `cfg` singleton |
+| Guardrails | regex PII + injection scoring + lexical/NLI groundedness |
+| LLM | provider-agnostic: Anthropic default, any OpenAI-compatible endpoint (Featherless etc.) via `LLM_PROVIDER` |
+| Orchestration | LangGraph (planned) |
+| Vector store | ChromaDB (planned) |
 | External search | Tavily |
 | UI | Gradio |
-| Config | pydantic-settings — reads from `.env` |
-
-## Project structure
-
-```
-app/
-  main.py               FastAPI — /health, /ask
-  config.py             cfg singleton — all settings from .env
-  audit.py              JSONL audit logger
-  security/             auth, tenancy, secrets
-  guardrails/           pii.py, injection.py, groundedness.py
-  rag/                  ingest.py, retrieval.py, chunker.py
-  orchestration/        state.py, graph.py, nodes/
-  tools/                registry.py, rag_tool.py, web_search.py
-packages/
-  contracts/            shared Pydantic schemas (schemas.py, rag.py)
-ui/
-  app.py                Gradio demo — calls FastAPI over HTTP
-eval/
-  harness.py            eval runner
-  corpus.json           labeled eval set
-data/
-  chroma/               ChromaDB store (git-ignored)
-  audit/                audit JSONL files (git-ignored)
-```
 
 ## Local setup
 
 Prerequisites: Python 3.11 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# 1. Install dependencies
 uv sync
-
-# 2. Configure
-cp .env.example .env
-# Fill in ANTHROPIC_API_KEY, TAVILY_API_KEY
+cp .env.example .env   # fill in ANTHROPIC_API_KEY / TAVILY_API_KEY as needed
 ```
 
 ## Run
 
 ```bash
-# API
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-# Demo UI (separate terminal)
-uv run python ui/app.py
-
-# Smoke test
-uv run python scripts/smoke.py
-
-# Tests
-uv run pytest
+uv run bt-dev                    # API with auto-reload on :8000
+uv run bt-ui                     # Gradio demo on :7860 (separate terminal)
+uv run bt-smoke                  # offline smoke test
+uv run pytest                    # test suite
+uv run ruff check .              # lint
+uv run python evals/harness.py   # eval corpus against live API
 ```
+
+First time on a clone? Also run `uv run pre-commit install` so lint,
+line-ending, and secret checks run on every commit.
 
 ## Dev vs production
 
-Switch environments via the `ENV` variable:
+`ENV=production` loads `.env.production` (if present); anything else loads `.env`.
+Keep `REASONING_TEMPERATURE=0.0` — grounded QA must be deterministic.
 
-```bash
-# Development (default) — loads .env
-ENV=development
-
-# Production — loads .env.production
-ENV=production
-```
-
-Dev uses `claude-sonnet-4-5` with relaxed thresholds.
-Production uses `claude-sonnet-4-7-20250219` with tighter thresholds.
-
-## Adding optional extras
+## Optional extras
 
 ```bash
 uv sync --extra pipeline      # transformers + torch (NLI faithfulness gate)
@@ -106,6 +67,7 @@ uv sync --extra observability # langfuse
 uv sync --extra ner           # spacy (PII NER, Gate 3)
 ```
 
-## Key rule
+## Key rules
 
-Never read `os.environ` directly outside of `app/config.py`. Import `cfg` from `app.config` everywhere else.
+- Never read `os.environ` outside `app/config.py` — import `cfg` instead.
+- PRs only; CI must be green to merge. See `CLAUDE.md` for the full ruleset.

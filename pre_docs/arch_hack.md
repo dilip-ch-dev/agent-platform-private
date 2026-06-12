@@ -1,4 +1,6 @@
-# ContextOS — Architecture Reference
+# Buildathon Agent Platform — Architecture Reference (TARGET design)
+
+> This document is the build-toward design. For what is implemented today, see CLAUDE.md (status column).
 
 ## Request pipeline
 
