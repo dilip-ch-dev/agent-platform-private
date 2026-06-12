@@ -11,8 +11,9 @@ on:
       - main
 
 jobs:
-  smoke:
+  ci:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,11 +23,22 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install uv
-        run: pip install uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
       - name: Install dependencies
         run: uv sync --extra dev
 
+      - name: Copy env
+        run: cp .env.example .env
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Run tests
+        run: uv run pytest
+
       - name: Run smoke test
-        run: uv run python scripts/smoke.py
+        run: uv run smoke

@@ -1,8 +1,8 @@
-"""Phase 0 smoke test — validates API contract without external network calls."""
+"""Smoke test — validates API contract without external network calls."""
 
 from fastapi.testclient import TestClient
 
-from apps.api.main import app
+from app.main import app
 
 
 def main() -> None:
@@ -16,8 +16,7 @@ def main() -> None:
     assert ask_response.status_code == 200, ask_response.text
 
     payload = ask_response.json()
-    required_fields = ["answer", "confidence", "status", "trace_id", "citations"]
-    for field in required_fields:
+    for field in ["answer", "confidence", "status", "trace_id", "citations"]:
         assert field in payload, f"Missing field: {field}"
 
     assert isinstance(payload["answer"], str) and payload["answer"]

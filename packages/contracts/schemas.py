@@ -1,7 +1,7 @@
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Locator(BaseModel):
@@ -17,7 +17,13 @@ class Citation(BaseModel):
     locator: Locator
 
 
+class HealthResponse(BaseModel):
+    status: str
+
+
 class AgentRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+
     question: str
     session_id: str | None = None
 

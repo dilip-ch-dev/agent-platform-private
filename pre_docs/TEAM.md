@@ -30,13 +30,15 @@ Do not assign names here yet. Turn these into Linear/GitHub issues when the team
 
 ## How to work remotely
 
-1. Pull latest `main` before starting.
+1. Pull latest `development` before starting.
 2. Pick one small issue.
-3. Create a branch for that issue.
+3. Create a feature branch from `development`.
 4. Make the smallest working change.
-5. Run the smoke test.
-6. Open a PR.
+5. Run the smoke test (and `pytest` when contracts or CI-covered code change).
+6. Open a PR targeting `development`.
 7. Merge early after review.
+
+`development` merges into `main` only after integration checks pass (smoke test, CI).
 
 No long-lived branches. No private local masterpieces. No parallel rewrites.
 
@@ -48,7 +50,7 @@ A slice is not done because files exist. It is done when:
 - it runs locally
 - it has a smoke check or minimal test
 - it does not introduce real secrets
-- it is merged into `main`
+- it is merged into `development`
 - the next teammate can build on it without asking for hidden context
 
 ## Suggested issue labels
@@ -70,7 +72,7 @@ A slice is not done because files exist. It is done when:
 
 - [ ] Everyone has repo access.
 - [ ] Everyone can clone and run the repo.
-- [ ] Phase 0 smoke test passes on at least two machines.
+- [ ] Phase 0 smoke test and CI pass on at least two machines.
 - [ ] Each member has made one small PR.
 - [ ] API credit keys are documented in `.env.example`, not committed.
 - [ ] Skeleton has one deployed or locally demoable end-to-end path.

@@ -1,9 +1,26 @@
+# Environment
 .env
 .env.*
 !.env.example
+
+# Python
 .venv/
 __pycache__/
 *.pyc
 *.egg-info/
 dist/
 build/
+
+# Data — generated at runtime, never commit
+data/chroma/*
+!data/chroma/.gitkeep
+data/audit/*
+!data/audit/.gitkeep
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
+# Local/private planning notes
+.local/
+Buildathon_Intel_and_Strategy.md

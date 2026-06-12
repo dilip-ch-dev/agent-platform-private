@@ -2,97 +2,110 @@
 
 Reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
 
-This repo is the shared team foundation.
-
 ## What we are building
 
 A provider-agnostic agent platform with:
 
-- FastAPI API boundary
-- Pydantic request/response contracts
-- LangGraph orchestration
-- retrieval pipeline
-- tool registry
-- citation verification
-- confidence scoring
-- guardrails
-- refusal or human-review gate
-- observability
-- eval harness
-- Gradio demo UI calling FastAPI over HTTP
-
-## Why
-
-The event problem statement will be released on-site. Instead of guessing the final app now, we are preparing the reusable skeleton so the team can adapt corpus, tools, workflow, and UI quickly.
-
-## Start here
-
-Read these in order:
-
-1. `PROJECT.md` — team-facing overview
-2. `00_START_HERE.md` — canonical context
-3. `CLAUDE.md` — instructions for coding agents
-4. `docs/ARCHITECTURE.md` — technical architecture
-5. `docs/TEAM.md` — collaboration model
-6. `docs/ROADMAP.md` — phase plan
-7. `docs/DECISIONS.md` — decision log
-
-## Current locked stack
-
-- Python core
-- FastAPI
-- Pydantic
-- LangGraph
+- FastAPI API boundary with Pydantic contracts
+- LangGraph orchestration pipeline
+- RAG — ingest, chunk, embed, retrieve (ChromaDB + sentence-transformers)
+- Guardrails — PII masking, injection detection, faithfulness gate (NLI)
+- Tool registry + Tavily external search
+- Confidence scoring and refusal gate
+- JSONL audit log and Langfuse observability
 - Gradio demo UI
-- provider-agnostic LLM adapter
-- pluggable retrieval/vector store
-- JSONL audit logs first
-- optional PostHog/Langfuse later
 
+## Stack
 
-## Phase 0 target
+| Layer | Technology |
+|---|---|
+| API | FastAPI + Uvicorn |
+| Contracts | Pydantic v2 |
+| Orchestration | LangGraph |
+| LLM | Anthropic Claude (via LangChain) |
+| Embeddings | sentence-transformers — all-MiniLM-L6-v2 |
+| Vector store | ChromaDB |
+| External search | Tavily |
+| UI | Gradio |
+| Config | pydantic-settings — reads from `.env` |
 
-Phase 0 is complete when:
+## Project structure
 
-- FastAPI starts locally
-- Gradio starts locally
-- Gradio calls FastAPI over HTTP
-- `/ask` returns a schema-valid mock response
-- stable Pydantic contracts exist
-- retrieval, agent, tools, guardrails, evals, and observability exist as stubs
-- smoke test passes without external API calls
-- no secrets or generated artifacts are committed
+```
+app/
+  main.py               FastAPI — /health, /ask
+  config.py             cfg singleton — all settings from .env
+  audit.py              JSONL audit logger
+  security/             auth, tenancy, secrets
+  guardrails/           pii.py, injection.py, groundedness.py
+  rag/                  ingest.py, retrieval.py, chunker.py
+  orchestration/        state.py, graph.py, nodes/
+  tools/                registry.py, rag_tool.py, web_search.py
+packages/
+  contracts/            shared Pydantic schemas (schemas.py, rag.py)
+ui/
+  app.py                Gradio demo — calls FastAPI over HTTP
+eval/
+  harness.py            eval runner
+  corpus.json           labeled eval set
+data/
+  chroma/               ChromaDB store (git-ignored)
+  audit/                audit JSONL files (git-ignored)
+```
 
-## Do not build yet
-
-- Governance OS
-- VisaPilot
-- GlassHire
-- final event-day product
-- full production dashboard
-- provider-specific hard-coded runtime
-
-Those are skins or later phases. Skeleton first.
-
-## Run locally
+## Local setup
 
 Prerequisites: Python 3.11 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
+# 1. Install dependencies
 uv sync
+
+# 2. Configure
+cp .env.example .env
+# Fill in ANTHROPIC_API_KEY, TAVILY_API_KEY
+```
+
+## Run
+
+```bash
+# API
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+# Demo UI (separate terminal)
+uv run python ui/app.py
+
+# Smoke test
 uv run python scripts/smoke.py
+
+# Tests
+uv run pytest
 ```
 
-Start the API:
+## Dev vs production
+
+Switch environments via the `ENV` variable:
 
 ```bash
-uv run uvicorn apps.api.main:app --reload --host 127.0.0.1 --port 8000
+# Development (default) — loads .env
+ENV=development
+
+# Production — loads .env.production
+ENV=production
 ```
 
-Start the Gradio demo (in a second terminal, with the API running):
+Dev uses `claude-sonnet-4-5` with relaxed thresholds.
+Production uses `claude-sonnet-4-7-20250219` with tighter thresholds.
+
+## Adding optional extras
 
 ```bash
-uv run python apps/demo/app.py
+uv sync --extra pipeline      # transformers + torch (NLI faithfulness gate)
+uv sync --extra evals         # ragas
+uv sync --extra observability # langfuse
+uv sync --extra ner           # spacy (PII NER, Gate 3)
 ```
 
-Copy `.env.example` to `.env` and fill in placeholder values as needed. Do not commit `.env`.
+## Key rule
+
+Never read `os.environ` directly outside of `app/config.py`. Import `cfg` from `app.config` everywhere else.
