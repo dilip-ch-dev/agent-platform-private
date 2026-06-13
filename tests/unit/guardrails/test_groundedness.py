@@ -30,6 +30,19 @@ class TestVerify:
         claim = "Enterprise customers can request refunds within 30 days."
         assert verify(claim, evidence) == "contradiction"
 
+    def test_ordinary_word_containing_no_is_not_negation(self) -> None:
+        # Regression: "innovation"/"technology" contain the substring "no"
+        # but are not negations. A substring check used to flip these to
+        # "contradiction"; word-boundary matching must read them as support.
+        evidence = "The company reported innovation growth."
+        claim = "The company reported growth."
+        assert verify(claim, evidence) == "entailment"
+
+    def test_contraction_still_counts_as_negation(self) -> None:
+        evidence = "Enterprise customers can't request refunds within 30 days."
+        claim = "Enterprise customers can request refunds within 30 days."
+        assert verify(claim, evidence) == "contradiction"
+
     def test_empty_claim_is_neutral(self) -> None:
         assert verify("", "Some evidence text here.") == "neutral"
 

@@ -65,3 +65,8 @@ class TestIsBlocked:
 
     def test_unknown_mode_fails_closed(self) -> None:
         assert is_blocked(0.9, threshold=0.75, mode="typo_mode")
+
+    def test_unknown_mode_fails_closed_on_low_score(self) -> None:
+        # Regression: fail-closed must hold even when the score is low.
+        # A typo in the configured mode must never silently allow traffic.
+        assert is_blocked(0.1, threshold=0.75, mode="typo_mode")

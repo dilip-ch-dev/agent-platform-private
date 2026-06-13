@@ -35,6 +35,17 @@ class TestAuditLogger:
         with pytest.raises(ValueError):
             logger.log_event("t", "e", {"raw_question": "x"})
 
+    def test_rejects_nested_raw_question_key(self, tmp_path) -> None:
+        # Regression: the flat key check missed nested payloads entirely.
+        logger = AuditLogger(str(tmp_path))
+        with pytest.raises(ValueError):
+            logger.log_event("t", "e", {"details": {"question": "raw PII"}})
+
+    def test_rejects_raw_question_inside_list(self, tmp_path) -> None:
+        logger = AuditLogger(str(tmp_path))
+        with pytest.raises(ValueError):
+            logger.log_event("t", "e", {"events": [{"question": "raw PII"}]})
+
     def test_empty_payload_ok(self, tmp_path) -> None:
         logger = AuditLogger(str(tmp_path))
         logger.log_event("t", "startup")

@@ -63,6 +63,26 @@ class TestAskInjectionBlocking:
         assert response.json()["status"] == "answered"
 
 
+class TestAuditNeverStoresRawPii:
+    def test_raw_email_absent_from_audit_log(self) -> None:
+        # End-to-end privacy guarantee: even though the request contains a
+        # raw email, the redact-at-the-boundary step means it must never
+        # land in the audit log on disk.
+        import glob
+        from pathlib import Path
+
+        from app.config import cfg
+
+        email = "secret.person@example.com"
+        client.post("/ask", json={"question": f"reach me at {email} about my plan"})
+
+        blob = "".join(
+            Path(f).read_text(encoding="utf-8")
+            for f in glob.glob(str(Path(cfg.audit_log_path) / "audit-*.jsonl"))
+        )
+        assert email not in blob
+
+
 class TestContractValidation:
     def test_missing_question_rejected(self) -> None:
         response = client.post("/ask", json={})

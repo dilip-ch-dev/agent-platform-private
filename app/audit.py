@@ -2,9 +2,13 @@
 
 One line per event: ``{"ts": ..., "trace_id": ..., "event": ..., "payload": ...}``.
 
-CLAUDE.md rule 6 is enforced mechanically here: a payload containing a raw
-``question`` key is rejected — callers must redact first and pass
-``redacted_question``.
+Privacy model (CLAUDE.md rule 6): the real guarantee is that callers redact
+at the request boundary and only ever log ``redacted_*`` fields. This logger
+adds a mechanical *backstop* — it rejects any payload carrying a known
+raw-input key (``question`` / ``raw_question`` / ``original_question``) at
+any nesting depth. The backstop catches the obvious mistake of logging a raw
+key; it cannot catch raw PII smuggled under an innocent key name, which is
+why redaction-at-the-boundary — not this check — is the actual protection.
 """
 
 import json
@@ -12,6 +16,24 @@ import time
 from pathlib import Path
 
 _FORBIDDEN_PAYLOAD_KEYS = frozenset({"question", "raw_question", "original_question"})
+
+
+def _find_forbidden_keys(obj: object) -> list[str]:
+    """Return any forbidden raw-input keys found anywhere in a nested payload."""
+    if isinstance(obj, dict):
+        hit = _FORBIDDEN_PAYLOAD_KEYS & obj.keys()
+        if hit:
+            return sorted(hit)
+        for value in obj.values():
+            found = _find_forbidden_keys(value)
+            if found:
+                return found
+    elif isinstance(obj, (list | tuple)):
+        for item in obj:
+            found = _find_forbidden_keys(item)
+            if found:
+                return found
+    return []
 
 
 class AuditLogger:
@@ -32,11 +54,11 @@ class AuditLogger:
         payload: dict[str, object] | None = None,
     ) -> None:
         payload = payload or {}
-        forbidden = _FORBIDDEN_PAYLOAD_KEYS & payload.keys()
+        forbidden = _find_forbidden_keys(payload)
         if forbidden:
             raise ValueError(
-                f"Audit payload must never contain raw input keys {sorted(forbidden)}; "
-                "redact first and pass 'redacted_question'."
+                f"Audit payload must never contain raw input keys {forbidden} "
+                "(found at any nesting depth); redact first and pass 'redacted_question'."
             )
 
         record = {

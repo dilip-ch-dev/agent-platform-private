@@ -16,13 +16,50 @@ import re
 import httpx
 
 _WORD = re.compile(r"[a-z0-9]+")
-_NEGATORS = frozenset({"not", "no", "never", "none", "cannot", "n't", "without"})
-_STOPWORDS = frozenset({
-    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
-    "of", "in", "on", "at", "to", "for", "from", "with", "by", "as",
-    "and", "or", "but", "if", "then", "it", "its", "this", "that",
-    "these", "those", "he", "she", "they", "we", "you", "i",
-})
+# Whole-word negators only. A substring check is a bug magnet here:
+# "no" lives inside "innovation", "technology", "annotation", "nobody"...
+_NEGATORS = frozenset({"not", "no", "never", "none", "cannot", "without", "nor", "neither"})
+_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "of",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "from",
+        "with",
+        "by",
+        "as",
+        "and",
+        "or",
+        "but",
+        "if",
+        "then",
+        "it",
+        "its",
+        "this",
+        "that",
+        "these",
+        "those",
+        "he",
+        "she",
+        "they",
+        "we",
+        "you",
+        "i",
+    }
+)
 
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
@@ -40,17 +77,29 @@ def _content_tokens(text: str) -> set[str]:
 
 
 def _has_negation(text: str) -> bool:
+    """True if the text carries a negation, matched on whole words only.
+
+    Word-boundary matching is deliberate: a substring check would treat
+    ordinary words like "innovation" or "technology" (which contain "no")
+    as negated. Contractions ("can't", "don't") are caught via the "n't"
+    suffix, which the word tokenizer would otherwise split apart.
+    """
     lowered = text.lower()
-    return any(n in lowered.split() or n in lowered for n in _NEGATORS)
+    if "n't" in lowered:
+        return True
+    return any(word in _NEGATORS for word in _WORD.findall(lowered))
 
 
 def verify(claim: str, evidence: str, use_nli: bool = False) -> str:
     """Label whether ``evidence`` supports ``claim``.
 
-    Lexical default: token-overlap containment of the claim in the evidence.
-    High overlap + matching polarity -> entailment; high overlap + opposite
-    polarity -> contradiction; otherwise neutral. Deliberately conservative:
-    when unsure, return neutral and let the gate abstain.
+    The lexical default is a *support heuristic*, not a true entailment
+    model: it measures token-overlap containment of the claim in the
+    evidence and compares negation polarity. High overlap + matching
+    polarity -> entailment; high overlap + opposite polarity ->
+    contradiction; otherwise neutral. It is deliberately conservative —
+    when unsure it returns neutral and lets the gate abstain. For real
+    entailment, install the ``pipeline`` extra and pass ``use_nli=True``.
     """
     if use_nli:
         label = _nli_verify(claim, evidence)
