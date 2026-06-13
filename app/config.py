@@ -13,11 +13,16 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# ENV=production loads .env.production; anything else loads .env
+# Production must never silently fall back to the development .env:
+#   production + .env.production present  -> load it
+#   production + .env.production missing  -> load NO file; real env vars only
+#   any other ENV                         -> load .env
 _ENV = os.getenv("ENV", "development")
-_env_file = (
-    ".env.production" if _ENV == "production" and Path(".env.production").exists() else ".env"
-)
+if _ENV == "production":
+    _prod_env = Path(".env.production")
+    _env_file: str | None = ".env.production" if _prod_env.exists() else None
+else:
+    _env_file = ".env"
 
 
 class ModelParams(BaseModel):

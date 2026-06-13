@@ -60,7 +60,7 @@ evals/
   corpus.json                  IMPLEMENTED  30 generic rows (10 answerable / 10 unanswerable / 10 adversarial)
   harness.py                   IMPLEMENTED  runs corpus against live API
 tests/
-  contracts/  unit/  integration/   91 tests — mirror the app/ structure
+  contracts/  unit/  integration/   97 tests — mirror the app/ structure
 data/
   chroma/   audit/             runtime artifacts, git-ignored
 scripts/smoke.py               IMPLEMENTED  offline API-contract smoke test
@@ -153,7 +153,7 @@ cp .env.example .env          # fill ANTHROPIC_API_KEY / TAVILY_API_KEY as neede
 uv run bt-dev                 # API with reload on :8000
 uv run bt-ui                  # Gradio demo on :7860 (API must be running)
 uv run bt-smoke               # offline smoke test
-uv run pytest                 # 91 tests
+uv run pytest                 # 97 tests
 uv run ruff check .           # lint
 uv run python evals/harness.py  # eval corpus against the live API
 ```

@@ -1,0 +1,18 @@
+# gitleaks configuration — auto-detected at the repo root by the pre-commit hook.
+# Extends the default ruleset and allowlists synthetic secrets that live only
+# in tests, so the secret scan does not flag fixtures as real leaks.
+title = "agent-platform gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Exact synthetic API key used only in the PII unit test"
+condition = "AND"
+regexTarget = "match"
+paths = [
+    '''tests/unit/guardrails/test_pii\.py''',
+]
+regexes = [
+    '''sk-abcdefghij1234567890XY''',
+]

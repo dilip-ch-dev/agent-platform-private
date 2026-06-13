@@ -7,9 +7,9 @@ Reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
 - FastAPI API boundary (`/health`, `/ask`) with strict Pydantic contracts
 - Input guardrails wired into `/ask`: PII redaction + prompt-injection blocking
 - Groundedness verification utilities (lexical now, NLI optional, Tavily external check)
-- JSONL audit logging (raw PII mechanically rejected)
+- JSONL audit logging (redacted at the boundary; raw-input keys rejected at any nesting depth)
 - Gradio demo UI calling the API over HTTP
-- Eval corpus (30 rows) + harness; 91 tests; ruff + pytest + smoke in CI
+- Eval corpus (30 rows) + harness; 97 tests; ruff + pytest + smoke in CI
 
 ## What is planned (stubs in place)
 
@@ -35,7 +35,7 @@ auth/tenancy, tool registry. See `CLAUDE.md` for the status-marked breakdown.
 Prerequisites: Python 3.11 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv sync
+uv sync --extra dev    # dev extra installs pytest, ruff, and pre-commit
 cp .env.example .env   # fill in ANTHROPIC_API_KEY / TAVILY_API_KEY as needed
 ```
 
@@ -55,7 +55,8 @@ line-ending, and secret checks run on every commit.
 
 ## Dev vs production
 
-`ENV=production` loads `.env.production` (if present); anything else loads `.env`.
+`ENV=production` loads `.env.production` if present; if it is missing, only real
+environment variables are used — it never silently falls back to `.env`. Anything else loads `.env`.
 Keep `REASONING_TEMPERATURE=0.0` — grounded QA must be deterministic.
 
 ## Optional extras
