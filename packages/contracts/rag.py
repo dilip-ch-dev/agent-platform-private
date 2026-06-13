@@ -9,9 +9,7 @@ SupportedSourceType = Literal["pdf", "txt", "csv", "unknown"]
 
 def _validate_locator(locator: Locator) -> Locator:
     has_position = (
-        locator.page is not None
-        or locator.row is not None
-        or locator.char_start is not None
+        locator.page is not None or locator.row is not None or locator.char_start is not None
     )
     if not has_position:
         raise ValueError("Locator must have at least one of page, row, or char_start")
