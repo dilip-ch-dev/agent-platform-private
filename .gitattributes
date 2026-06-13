@@ -12,4 +12,4 @@
 *.pdf binary
 *.parquet binary
 *.sqlite3 binary
-uv.lock text eol=lf -diff
+uv.lock text eol=lf

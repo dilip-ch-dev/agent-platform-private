@@ -20,7 +20,7 @@ def main() -> None:
         assert field in payload, f"Missing field: {field}"
 
     assert isinstance(payload["answer"], str) and payload["answer"]
-    assert isinstance(payload["confidence"], (int, float))
+    assert isinstance(payload["confidence"], (int | float))
     assert isinstance(payload["status"], str) and payload["status"]
     assert isinstance(payload["trace_id"], str) and payload["trace_id"]
     assert isinstance(payload["citations"], list)
