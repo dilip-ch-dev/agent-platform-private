@@ -2,7 +2,13 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 
-from packages.contracts.schemas import AgentRequest, AgentResponse, Citation, HealthResponse, Locator
+from packages.contracts.schemas import (
+    AgentRequest,
+    AgentResponse,
+    Citation,
+    HealthResponse,
+    Locator,
+)
 
 app = FastAPI(title="Buildathon Agent Platform", version="0.1.0")
 

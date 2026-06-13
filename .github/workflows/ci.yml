@@ -12,6 +12,7 @@ on:
 
 jobs:
   ci:
+    name: Lint, Test, Smoke
     runs-on: ubuntu-latest
 
     steps:
@@ -29,16 +30,19 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --extra dev --extra pipeline
 
       - name: Copy env
         run: cp .env.example .env
 
+      - name: Format check
+        run: uv run ruff format --check .
+
       - name: Lint
         run: uv run ruff check .
 
-      - name: Run tests
-        run: uv run pytest
+      - name: Run all tests with coverage
+        run: uv run pytest --cov=app --cov=packages --cov-fail-under=80 --cov-report=term-missing
 
-      - name: Run smoke test
+      - name: Smoke test
         run: uv run smoke

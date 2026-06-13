@@ -30,7 +30,9 @@ class AgentRequest(BaseModel):
 
 class AgentResponse(BaseModel):
     answer: str
-    status: Literal["answered", "refused", "blocked", "low_confidence", "review"] = "answered"
+    status: Literal["answered", "refused", "blocked", "low_confidence", "review"] = (
+        "answered"
+    )
     confidence: float = Field(ge=0.0, le=1.0)
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
     citations: list[Citation] = Field(default_factory=list)

@@ -14,10 +14,12 @@ def start() -> None:
 def ui() -> None:
     """Start the Gradio demo UI."""
     from ui.app import demo
+
     demo.launch(server_name="127.0.0.1", server_port=7860)
 
 
 def smoke() -> None:
     """Run the smoke test."""
     import runpy
+
     runpy.run_path("scripts/smoke.py", run_name="__main__")
