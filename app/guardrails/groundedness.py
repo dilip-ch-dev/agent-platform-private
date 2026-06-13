@@ -1,15 +1,21 @@
 import re
+from functools import lru_cache
+from typing import Callable, Literal
 
-from transformers import pipeline
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import cfg
 
+MODEL_NAME = "cross-encoder/nli-deberta-v3-base"
+Verifier = Callable[[dict[str, str]], dict[str, object]]
 
-# Load once at startup
-_nli = pipeline(
-    "text-classification",
-    model="cross-encoder/nli-deberta-v3-base",
-)
+
+@lru_cache(maxsize=1)
+def _get_nli_verifier() -> object:
+    from transformers import pipeline
+
+    model_id = cfg.groundedness_model or MODEL_NAME
+    return pipeline("text-classification", model=model_id)
 
 
 def split_claims(text: str) -> list[str]:
@@ -23,89 +29,170 @@ def split_claims(text: str) -> list[str]:
     ]
 
 
-def verify_claim(claim: str, evidence: str) -> tuple[str, float]:
-    """
-    Returns:
-        (label, score)
+class ClaimVerificationResult(BaseModel):
+    model_config = ConfigDict(strict=True)
 
-    Labels:
-        ENTAILMENT
-        NEUTRAL
-        CONTRADICTION
-    """
+    claim: str
+    label: Literal["ENTAILMENT", "NEUTRAL", "CONTRADICTION", "UNKNOWN"]
+    score: float = Field(ge=0.0, le=1.0)
+    grounded: bool
+    failure_reason: str | None = None
 
-    result = _nli(
-        {
-            "text": evidence,
-            "text_pair": claim,
-        }
+
+def verify_claim(
+    claim: str,
+    evidence: str,
+    verifier: Verifier | None = None,
+) -> ClaimVerificationResult:
+    """
+    Returns a single claim verification result for one claim/evidence pair.
+    """
+    if verifier is None:
+        verifier = _get_nli_verifier()
+
+    try:
+        result = verifier(
+            {
+                "text": evidence,
+                "text_pair": claim,
+            }
+        )
+
+        label = str(result.get("label", "UNKNOWN")).upper()
+        score = float(result.get("score", 0.0))
+
+        if label not in {"ENTAILMENT", "NEUTRAL", "CONTRADICTION"}:
+            label = "UNKNOWN"
+
+        grounded = (
+            label == "ENTAILMENT"
+            and score >= cfg.groundedness_threshold
+        )
+
+        return ClaimVerificationResult(
+            claim=claim,
+            label=label,
+            score=score,
+            grounded=grounded,
+        )
+    except Exception as exc:
+        return ClaimVerificationResult(
+            claim=claim,
+            label="UNKNOWN",
+            score=0.0,
+            grounded=False,
+            failure_reason=f"groundedness verifier failed: {exc}",
+        )
+
+
+def evaluate_claim(
+    claim: str,
+    evidence_chunks: list[str],
+    verifier: Verifier | None = None,
+) -> ClaimVerificationResult:
+    """
+    Returns the best verification result for a claim across evidence chunks.
+    """
+    if not evidence_chunks:
+        return ClaimVerificationResult(
+            claim=claim,
+            label="UNKNOWN",
+            score=0.0,
+            grounded=False,
+        )
+
+    best_result: ClaimVerificationResult | None = None
+
+    for evidence in evidence_chunks:
+        claim_result = verify_claim(claim, evidence, verifier=verifier)
+
+        if claim_result.failure_reason:
+            return claim_result
+
+        if claim_result.grounded:
+            return claim_result
+
+        if best_result is None or claim_result.score > best_result.score:
+            best_result = claim_result
+
+    return best_result or ClaimVerificationResult(
+        claim=claim,
+        label="UNKNOWN",
+        score=0.0,
+        grounded=False,
     )
-
-    return result["label"].upper(), result["score"]
 
 
 def is_grounded(
     claim: str,
     evidence_chunks: list[str],
+    verifier: Verifier | None = None,
 ) -> bool:
     """
     True if ANY evidence chunk supports the claim.
     """
+    return evaluate_claim(
+        claim,
+        evidence_chunks,
+        verifier=verifier,
+    ).grounded
 
-    for evidence in evidence_chunks:
-        label, score = verify_claim(
-            claim,
-            evidence,
-        )
 
-        if (
-            label == "ENTAILMENT"
-            and score >= cfg.groundedness_threshold
-        ):
-            return True
+class GroundednessResult(BaseModel):
+    model_config = ConfigDict(strict=True)
 
-    return False
+    filtered_answer: str
+    groundedness_score: float = Field(ge=0.0, le=1.0)
+    claim_results: list[ClaimVerificationResult]
+    failure_reason: str | None = None
 
 
 def filter_grounded(
     answer: str,
     evidence_chunks: list[str],
-) -> tuple[str, float]:
+    verifier: Verifier | None = None,
+) -> GroundednessResult:
     """
-    Returns:
-        (filtered_answer, groundedness_score)
-
-    groundedness_score =
-        supported_claims / total_claims
+    Returns a typed groundedness result containing the filtered answer,
+    the groundedness score, per-claim detail, and any failure reason.
     """
-
     claims = split_claims(answer)
 
     if not claims:
-        return "", 0.0
-
-    supported_claims = [
-        claim
-        for claim in claims
-        if is_grounded(
-            claim,
-            evidence_chunks,
+        return GroundednessResult(
+            filtered_answer="",
+            groundedness_score=0.0,
+            claim_results=[],
         )
+
+    claim_results = [
+        evaluate_claim(claim, evidence_chunks, verifier=verifier)
+        for claim in claims
     ]
 
-    groundedness_score = (
-        len(supported_claims)
-        / len(claims)
+    for claim_result in claim_results:
+        if claim_result.failure_reason:
+            return GroundednessResult(
+                filtered_answer="",
+                groundedness_score=0.0,
+                claim_results=claim_results,
+                failure_reason=claim_result.failure_reason,
+            )
+
+    supported_claims = [
+        claim_result.claim
+        for claim_result in claim_results
+        if claim_result.grounded
+    ]
+
+    filtered_answer = " ".join(supported_claims)
+    groundedness_score = round(
+        len(supported_claims) / len(claims),
+        4,
     )
 
-    filtered_answer = " ".join(
-        supported_claims
-    )
-
-    return (
-        filtered_answer,
-        round(
-            groundedness_score,
-            4,
-        ),
+    return GroundednessResult(
+        filtered_answer=filtered_answer,
+        groundedness_score=groundedness_score,
+        claim_results=claim_results,
     )

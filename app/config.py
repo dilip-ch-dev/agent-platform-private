@@ -42,6 +42,7 @@ class Config(BaseSettings):
     confidence_threshold: float
     injection_threshold: float
     groundedness_threshold: float
+    groundedness_model: str = ""
 
     # Storage
     chroma_path: str

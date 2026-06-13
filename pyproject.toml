@@ -62,8 +62,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["packages", "app", "ui", "eval"]
-
-[dependency-groups]
-dev = [
-    "pytest>=9.0.3",
-]
