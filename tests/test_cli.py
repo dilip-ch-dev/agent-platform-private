@@ -22,6 +22,7 @@ def test_start_binds_all_interfaces() -> None:
 def test_ui_launches_gradio() -> None:
     mock_demo = MagicMock()
     import sys
+
     mock_module = MagicMock()
     mock_module.demo = mock_demo
     with patch.dict(sys.modules, {"ui.app": mock_module}):

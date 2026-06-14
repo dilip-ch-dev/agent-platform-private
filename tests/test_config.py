@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.config import Config, ModelParams, cfg
+from app.config import ModelParams, cfg
 
 
 class TestModelParams:
