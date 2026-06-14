@@ -100,6 +100,10 @@ class TestChunk:
         chunk = _valid_chunk()
         assert chunk.chunk_id == "chunk-1"
 
+    def test_rejects_bad_locator(self) -> None:
+        with pytest.raises(ValidationError):
+            _valid_chunk(locator=Locator(char_end=10))
+
     def test_preserves_source_unit_ids(self) -> None:
         chunk = _valid_chunk(source_unit_ids=["unit-1", "unit-2"])
         assert chunk.source_unit_ids == ["unit-1", "unit-2"]
@@ -117,6 +121,10 @@ class TestStoredChunk:
     def test_accepts_valid_stored_chunk(self) -> None:
         stored = _valid_stored_chunk()
         assert stored.tenant_id == "tenant-a"
+
+    def test_rejects_bad_locator(self) -> None:
+        with pytest.raises(ValidationError):
+            _valid_stored_chunk(locator=Locator(char_end=10))
 
     def test_vector_id_and_embedding_model_optional(self) -> None:
         stored = _valid_stored_chunk()
