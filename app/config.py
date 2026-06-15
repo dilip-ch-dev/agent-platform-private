@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Literal
 
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
@@ -40,12 +41,13 @@ class Config(BaseSettings):
     retrieval_min_score: float
     top_k_retrieval: int
     confidence_threshold: float
-    injection_threshold: float
+    injection_threshold: float = Field(ge=0.0, le=1.0)
     groundedness_threshold: float = Field(ge=0.0, le=1.0)
     groundedness_model: str = Field(
         default="cross-encoder/nli-deberta-v3-base",
         min_length=1,
     )
+    injection_mode: Literal["flag_only", "block"] = "block"
 
     # Storage
     chroma_path: str

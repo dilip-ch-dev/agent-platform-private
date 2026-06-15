@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.config import ModelParams, cfg
+from app.config import Config, ModelParams, cfg
 
 
 class TestModelParams:
@@ -32,6 +32,7 @@ class TestConfig:
         assert 0.0 < cfg.confidence_threshold < 1.0
         assert 0.0 < cfg.injection_threshold < 1.0
         assert 0.0 < cfg.groundedness_threshold < 1.0
+        assert cfg.injection_mode in ("flag_only", "block")
 
     def test_cfg_top_k_positive(self) -> None:
         assert cfg.top_k_retrieval > 0
@@ -53,3 +54,8 @@ class TestConfig:
 
     def test_reasoning_model_set(self) -> None:
         assert cfg.reasoning_model != ""
+
+    def test_rejects_invalid_injection_mode(self, monkeypatch) -> None:
+        monkeypatch.setenv("INJECTION_MODE", "typo")
+        with pytest.raises(ValidationError):
+            Config()
