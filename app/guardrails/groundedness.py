@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from functools import lru_cache
@@ -18,6 +19,11 @@ Label = Literal[
     "UNKNOWN",
     "VERIFIER_FAILED",
 ]
+FailureReason = Literal[
+    "groundedness verifier failed",
+    "groundedness verifier failed for all claims",
+    "groundedness verifier failed for one or more claims",
+]
 
 
 class VerifierProtocol(Protocol):
@@ -28,6 +34,7 @@ class VerifierProtocol(Protocol):
 def _get_nli_verifier(model_id: str) -> VerifierProtocol:
     from transformers import pipeline
 
+    logger.info("Loading groundedness model: %s", model_id)
     return pipeline("text-classification", model=model_id)
 
 
@@ -103,7 +110,7 @@ class ClaimVerificationResult(BaseModel):
     label: Label
     score: float = Field(ge=0.0, le=1.0)
     grounded: bool
-    failure_reason: str | None = None
+    failure_reason: FailureReason | None = None
 
 
 def _normalize_label(raw_label: object) -> Label:
@@ -138,7 +145,7 @@ def verify_claim(
     Returns a single claim verification result for one claim/evidence pair.
     """
     if verifier is None:
-        # Request-layer async wiring should run this blocking model call off-loop.
+        # Use filter_grounded_async from async request handlers.
         verifier = _get_nli_verifier(cfg.groundedness_model)
 
     try:
@@ -154,8 +161,14 @@ def verify_claim(
             score=score,
             grounded=grounded,
         )
-    except Exception:
-        logger.warning("Groundedness verifier call failed; claim marked for review.")
+    except Exception as exc:
+        logger.warning(
+            "Groundedness verification failed; "
+            "claim_length=%d evidence_length=%d error_type=%s",
+            len(claim),
+            len(evidence),
+            type(exc).__name__,
+        )
         return ClaimVerificationResult(
             claim=claim,
             label="VERIFIER_FAILED",
@@ -184,7 +197,7 @@ def evaluate_claim(
     best_result: ClaimVerificationResult | None = None
     first_failure: ClaimVerificationResult | None = None
 
-    for evidence in evidence_chunks:
+    for position, evidence in enumerate(evidence_chunks, start=1):
         claim_result = verify_claim(claim, evidence, verifier=verifier)
 
         if claim_result.failure_reason:
@@ -194,6 +207,11 @@ def evaluate_claim(
             continue
 
         if claim_result.grounded:
+            logger.debug(
+                "Claim grounded after %d/%d evidence chunks evaluated.",
+                position,
+                len(evidence_chunks),
+            )
             return claim_result
 
         if best_result is None or claim_result.score > best_result.score:
@@ -231,7 +249,7 @@ class GroundednessResult(BaseModel):
     filtered_answer: str
     groundedness_score: float = Field(ge=0.0, le=1.0)
     claim_results: list[ClaimVerificationResult]
-    failure_reason: str | None = None
+    failure_reason: FailureReason | None = None
     partial: bool = False
 
 
@@ -243,6 +261,10 @@ def filter_grounded(
     """
     Returns a typed groundedness result containing the filtered answer,
     the groundedness score, per-claim detail, and any failure reason.
+
+    The score is fail-closed: supported claims divided by total claims. Failed
+    verifier calls lower the score while remaining distinguishable via
+    ``partial`` and ``failure_reason``.
     """
     claims = split_claims(answer)
 
@@ -281,10 +303,10 @@ def filter_grounded(
     filtered_answer = " ".join(supported_claims)
     groundedness_score = (
         round(
-            len(supported_claims) / len(evaluated_claims),
+            len(supported_claims) / len(claims),
             4,
         )
-        if evaluated_claims
+        if claims
         else 0.0
     )
 
@@ -298,4 +320,20 @@ def filter_grounded(
             else None
         ),
         partial=bool(failed_claims),
+    )
+
+
+async def filter_grounded_async(
+    answer: str,
+    evidence_chunks: list[str],
+    verifier: VerifierProtocol | None = None,
+) -> GroundednessResult:
+    """
+    Async integration entry point for the blocking local groundedness verifier.
+    """
+    return await asyncio.to_thread(
+        filter_grounded,
+        answer,
+        evidence_chunks,
+        verifier,
     )

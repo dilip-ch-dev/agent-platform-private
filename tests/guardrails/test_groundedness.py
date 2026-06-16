@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import types
 
@@ -6,7 +7,9 @@ from pydantic import ValidationError
 
 from app.config import Config, cfg
 from app.guardrails.groundedness import (
+    ClaimVerificationResult,
     _get_nli_verifier,
+    filter_grounded_async,
     filter_grounded,
     is_grounded,
     split_claims,
@@ -67,6 +70,16 @@ def test_split_claims_handles_abbreviation_decimal_url_and_no_terminal():
         "Approx. 3.14 is pi.",
         "Docs live at https://example.com/a.b?x=1.",
         "Final claim has no terminal punctuation",
+    ]
+
+
+def test_split_claims_handles_exclamation_and_question():
+    claims = split_claims("Dr. Smith! Are you there? Yes I am.")
+
+    assert claims == [
+        "Dr. Smith!",
+        "Are you there?",
+        "Yes I am.",
     ]
 
 
@@ -257,12 +270,30 @@ def test_partial_claim_failure_is_reviewable_but_usable():
         result.failure_reason == "groundedness verifier failed for one or more claims"
     )
     assert result.filtered_answer == "A is true."
-    assert result.groundedness_score == 0.5
+    assert result.groundedness_score == round(1 / 3, 4)
     assert [claim.label for claim in result.claim_results] == [
         "ENTAILMENT",
         "VERIFIER_FAILED",
         "NEUTRAL",
     ]
+
+
+def test_score_denominator_uses_total_claims_with_two_failures():
+    evidence = ["A is true."]
+    answer = "A is true. B cannot be checked. C cannot be checked."
+
+    def verifier(text: str, *, text_pair: str) -> list[dict[str, object]]:
+        if text_pair == "A is true.":
+            return [{"label": "ENTAILMENT", "score": 0.9}]
+        raise RuntimeError("model failure")
+
+    result = filter_grounded(answer, evidence, verifier=verifier)
+
+    assert result.groundedness_score == round(1 / 3, 4)
+    assert result.partial is True
+    assert (
+        result.failure_reason == "groundedness verifier failed for one or more claims"
+    )
 
 
 def test_score_zero_when_all_claims_fail():
@@ -294,12 +325,41 @@ def test_model_failure_logs_sanitized_result(caplog: pytest.LogCaptureFixture):
         )
 
     assert result.claim_results[0].failure_reason == "groundedness verifier failed"
+    assert "claim_length=18" in caplog.text
+    assert "evidence_length=21" in caplog.text
+    assert "error_type=RuntimeError" in caplog.text
     assert "Secret claim text" not in caplog.text
     assert "Secret evidence text" not in caplog.text
     assert "secret raw exception" not in caplog.text
 
 
-def test_model_cache_is_keyed_by_model_id(monkeypatch: pytest.MonkeyPatch):
+def test_grounded_chunk_debug_log_uses_evaluated_position(
+    caplog: pytest.LogCaptureFixture,
+):
+    evidence = ["duplicate evidence", "duplicate evidence", "unused evidence"]
+    answer = "The statement is true."
+    calls = 0
+
+    def verifier(text: str, *, text_pair: str) -> list[dict[str, object]]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return [{"label": "NEUTRAL", "score": 0.5}]
+        return [{"label": "ENTAILMENT", "score": 0.95}]
+
+    with caplog.at_level("DEBUG"):
+        result = filter_grounded(answer, evidence, verifier=verifier)
+
+    assert result.groundedness_score == 1.0
+    assert "Claim grounded after 2/3 evidence chunks evaluated." in caplog.text
+    assert "duplicate evidence" not in caplog.text
+    assert "The statement is true." not in caplog.text
+
+
+def test_model_cache_is_keyed_by_model_id(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
     calls: list[tuple[str, str]] = []
 
     def pipeline(task: str, *, model: str) -> object:
@@ -313,9 +373,10 @@ def test_model_cache_is_keyed_by_model_id(monkeypatch: pytest.MonkeyPatch):
     )
     _get_nli_verifier.cache_clear()
 
-    first = _get_nli_verifier("model-a")
-    second = _get_nli_verifier("model-a")
-    third = _get_nli_verifier("model-b")
+    with caplog.at_level("INFO"):
+        first = _get_nli_verifier("model-a")
+        second = _get_nli_verifier("model-a")
+        third = _get_nli_verifier("model-b")
 
     assert first is second
     assert first is not third
@@ -323,7 +384,37 @@ def test_model_cache_is_keyed_by_model_id(monkeypatch: pytest.MonkeyPatch):
         ("text-classification", "model-a"),
         ("text-classification", "model-b"),
     ]
+    assert caplog.text.count("Loading groundedness model: model-a") == 1
+    assert caplog.text.count("Loading groundedness model: model-b") == 1
     _get_nli_verifier.cache_clear()
+
+
+def test_filter_grounded_async_matches_sync_result():
+    evidence = ["The statement is true."]
+    answer = "The statement is true."
+    verifier = make_mock_verifier(
+        {
+            (evidence[0], answer): [{"label": "ENTAILMENT", "score": 0.95}],
+        }
+    )
+
+    sync_result = filter_grounded(answer, evidence, verifier=verifier)
+    async_result = asyncio.run(
+        filter_grounded_async(answer, evidence, verifier=verifier)
+    )
+
+    assert async_result == sync_result
+
+
+def test_is_grounded_returns_false_when_no_chunk_supports():
+    evidence = ["The sky is blue."]
+    answer = "The ocean is made of chocolate."
+
+    verifier = make_mock_verifier(
+        {(evidence[0], answer): [{"label": "NEUTRAL", "score": 0.3}]}
+    )
+
+    assert is_grounded(answer, evidence, verifier=verifier) is False
 
 
 def test_groundedness_threshold_is_validated():
@@ -332,3 +423,14 @@ def test_groundedness_threshold_is_validated():
 
     with pytest.raises(ValidationError):
         Config(**make_config_values(groundedness_threshold=-0.01))
+
+
+def test_failure_reason_rejects_unsupported_values():
+    with pytest.raises(ValidationError):
+        ClaimVerificationResult(
+            claim="A claim.",
+            label="VERIFIER_FAILED",
+            score=0.0,
+            grounded=False,
+            failure_reason="unsupported failure reason",
+        )
