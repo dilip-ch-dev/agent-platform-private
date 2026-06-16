@@ -59,3 +59,9 @@ class TestConfig:
         monkeypatch.setenv("INJECTION_MODE", "typo")
         with pytest.raises(ValidationError):
             Config()
+
+    @pytest.mark.parametrize("threshold", ["-0.1", "1.1"])
+    def test_rejects_invalid_injection_threshold(self, monkeypatch, threshold) -> None:
+        monkeypatch.setenv("INJECTION_THRESHOLD", threshold)
+        with pytest.raises(ValidationError):
+            Config()

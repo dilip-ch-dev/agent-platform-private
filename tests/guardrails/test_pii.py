@@ -1,3 +1,5 @@
+import pytest
+
 from app.guardrails.pii import _luhn_valid, redact
 
 
@@ -24,6 +26,23 @@ def test_redacts_luhn_valid_credit_card() -> None:
     redacted, types = redact("Card: 4111 1111 1111 1111")
     assert "credit_card" in types
     assert "4111" not in redacted
+
+
+@pytest.mark.parametrize(
+    "card_number",
+    [
+        "4111 1111 1111 1111",
+        "5555 5555 5555 4444",
+        "3782 822463 10005",
+        "6011 1111 1111 1117",
+    ],
+)
+def test_redacts_common_card_prefixes(card_number: str) -> None:
+    redacted, types = redact(f"Card: {card_number}")
+
+    assert "credit_card" in types
+    assert card_number not in redacted
+    assert "[REDACTED:CREDIT_CARD]" in redacted
 
 
 def test_redacts_ip_address() -> None:
@@ -63,6 +82,51 @@ def test_luhn_rejects_random_digits() -> None:
     redacted, types = redact("Order number 1234 5678 9012 3457 shipped")
     assert "credit_card" not in types
     assert "1234 5678 9012 3457" in redacted
+
+
+def test_digit_heavy_email_is_not_redacted_as_phone() -> None:
+    redacted, types = redact("Send it to 415-555-2671@example.com")
+
+    assert types == ["email"]
+    assert "[REDACTED:EMAIL]" in redacted
+    assert "[REDACTED:PHONE]" not in redacted
+
+
+def test_card_embedded_in_longer_digit_sequence_is_not_partially_redacted() -> None:
+    text = "Reference 9994111111111111111999 should stay intact"
+    redacted, types = redact(text)
+
+    assert redacted == text
+    assert "credit_card" not in types
+
+
+def test_invalid_long_card_like_value_stays_unchanged() -> None:
+    text = "Reference 1234 5678 9012 3457 8901 shipped"
+    redacted, types = redact(text)
+
+    assert redacted == text
+    assert "credit_card" not in types
+
+
+def test_redacts_email_phone_and_card_without_cross_contamination() -> None:
+    text = "Email jane@example.com, call 415-555-2671, card 4111 1111 1111 1111."
+    redacted, types = redact(text)
+
+    assert types == ["credit_card", "email", "phone"]
+    assert "jane@example.com" not in redacted
+    assert "415-555-2671" not in redacted
+    assert "4111 1111 1111 1111" not in redacted
+    assert "[REDACTED:EMAIL]" in redacted
+    assert "[REDACTED:PHONE]" in redacted
+    assert "[REDACTED:CREDIT_CARD]" in redacted
+
+
+def test_adjacent_pii_tokens_do_not_corrupt_placeholders() -> None:
+    text = "jane@example.com,415-555-2671,4111 1111 1111 1111"
+    redacted, types = redact(text)
+
+    assert types == ["credit_card", "email", "phone"]
+    assert redacted == ("[REDACTED:EMAIL],[REDACTED:PHONE],[REDACTED:CREDIT_CARD]")
 
 
 def test_version_numbers_are_not_phone_numbers() -> None:

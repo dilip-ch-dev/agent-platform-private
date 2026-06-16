@@ -1,6 +1,9 @@
 """Prompt-injection scoring and blocking policy."""
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 _SIGNALS: list[tuple[float, re.Pattern[str]]] = [
     (
@@ -81,12 +84,28 @@ def score(text: str) -> tuple[float, list[str]]:
         if match:
             flagged.append(match.group(0)[:120])
             max_score = max(max_score, weight)
+    logger.debug(
+        "Injection score computed; matched_signals=%d max_score=%.2f",
+        len(flagged),
+        max_score,
+    )
     return max_score, flagged
 
 
 def is_blocked(injection_score: float, threshold: float, mode: str) -> bool:
     if mode == "flag_only":
-        return False
-    if mode == "block":
-        return injection_score >= threshold
-    return True
+        blocked = False
+    elif mode == "block":
+        blocked = injection_score >= threshold
+    else:
+        logger.warning("Unknown injection mode; failing closed. mode=%s", mode)
+        blocked = True
+
+    logger.debug(
+        "Injection block decision; mode=%s threshold=%.4f score=%.4f blocked=%s",
+        mode,
+        threshold,
+        injection_score,
+        blocked,
+    )
+    return blocked
