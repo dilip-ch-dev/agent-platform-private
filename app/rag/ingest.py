@@ -97,7 +97,9 @@ class CsvExtractor(BaseExtractor):
 
         raw = file_path.read_bytes()
         encoding = _detect_encoding(raw)
-        dataframe = pd.read_csv(file_path, encoding=encoding, dtype=str, keep_default_na=False)
+        dataframe = pd.read_csv(
+            file_path, encoding=encoding, dtype=str, keep_default_na=False
+        )
 
         units: list[ExtractedUnit] = []
         for row_index, row in dataframe.iterrows():
@@ -105,7 +107,9 @@ class CsvExtractor(BaseExtractor):
             if not any(value.strip() for _, value in normalized_items):
                 continue
 
-            row_text = " | ".join(f"{column}: {value}" for column, value in normalized_items).strip()
+            row_text = " | ".join(
+                f"{column}: {value}" for column, value in normalized_items
+            ).strip()
             if not row_text:
                 continue
 
@@ -133,7 +137,9 @@ class ExtractorRegistry:
     def get(self, suffix: str) -> BaseExtractor:
         normalized = suffix.lower()
         if normalized not in self._extractors:
-            raise ValueError(f"Unsupported file type for ingest: {suffix or '<no-extension>'}")
+            raise ValueError(
+                f"Unsupported file type for ingest: {suffix or '<no-extension>'}"
+            )
         return self._extractors[normalized]
 
 
@@ -154,7 +160,12 @@ class FileProcessor:
         path = Path(file_path)
         extractor = self._registry.get(path.suffix)
         units = extractor.extract(path)
-        logger.debug("extract() routed %s to %s (%d units)", path, extractor.__class__.__name__, len(units))
+        logger.debug(
+            "extract() routed %s to %s (%d units)",
+            path,
+            extractor.__class__.__name__,
+            len(units),
+        )
         return units
 
     def process(self, file_path: str | Path) -> list[Chunk]:

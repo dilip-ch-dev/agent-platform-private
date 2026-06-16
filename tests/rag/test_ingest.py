@@ -40,7 +40,11 @@ class StubPdfReaderAllBlank:
 class StubPdfReaderMixed:
     def __init__(self, path: str) -> None:
         assert path.endswith(".pdf"), f"Got {path!r}"
-        self.pages = [StubPdfPage(""), StubPdfPage("Page two content"), StubPdfPage(None)]
+        self.pages = [
+            StubPdfPage(""),
+            StubPdfPage("Page two content"),
+            StubPdfPage(None),
+        ]
 
 
 def test_pdf_extraction_has_locators(monkeypatch) -> None:
@@ -76,7 +80,9 @@ def test_chunk_text_splits_long_text() -> None:
 
     assert len(chunks) > 1
     assert all(len(chunk.text) <= 1024 for chunk in chunks)
-    assert all(chunk.token_count is not None and chunk.token_count > 0 for chunk in chunks)
+    assert all(
+        chunk.token_count is not None and chunk.token_count > 0 for chunk in chunks
+    )
 
 
 def test_chunker_empty_returns_empty() -> None:
@@ -84,7 +90,9 @@ def test_chunker_empty_returns_empty() -> None:
 
 
 def test_chunker_whitespace_returns_empty() -> None:
-    assert chunk_text("  \n\t ", "a.txt", "txt", Locator(char_start=0, char_end=0)) == []
+    assert (
+        chunk_text("  \n\t ", "a.txt", "txt", Locator(char_start=0, char_end=0)) == []
+    )
 
 
 def test_chunker_single_word_returns_single_chunk() -> None:
@@ -94,7 +102,9 @@ def test_chunker_single_word_returns_single_chunk() -> None:
 
 
 def test_chunker_chunk_ids_unique() -> None:
-    chunks = chunk_text("word " * 4000, "a.txt", "txt", Locator(char_start=0, char_end=100))
+    chunks = chunk_text(
+        "word " * 4000, "a.txt", "txt", Locator(char_start=0, char_end=100)
+    )
     ids = [chunk.chunk_id for chunk in chunks]
     assert len(ids) == len(set(ids))
 
@@ -158,8 +168,13 @@ def test_txt_blank_lines_skipped_and_offsets_valid(tmp_path: Path) -> None:
 
     assert len(units) == 2
     assert all(unit.text.strip() != "" for unit in units)
-    assert all(unit.locator.char_start is not None and unit.locator.char_end is not None for unit in units)
-    assert all((unit.locator.char_end or 0) > (unit.locator.char_start or 0) for unit in units)
+    assert all(
+        unit.locator.char_start is not None and unit.locator.char_end is not None
+        for unit in units
+    )
+    assert all(
+        (unit.locator.char_end or 0) > (unit.locator.char_start or 0) for unit in units
+    )
 
 
 def test_txt_windows_crlf_offsets(tmp_path: Path) -> None:
@@ -184,7 +199,9 @@ def test_txt_latin1_detected_no_crash(tmp_path: Path) -> None:
 
 def test_csv_row_locator(tmp_path: Path) -> None:
     csv_path = tmp_path / "sample.csv"
-    csv_path.write_text("name,role\nAda,Engineer\nTuring,Researcher\n", encoding="utf-8")
+    csv_path.write_text(
+        "name,role\nAda,Engineer\nTuring,Researcher\n", encoding="utf-8"
+    )
 
     chunks = build_chunks(str(csv_path))
 
