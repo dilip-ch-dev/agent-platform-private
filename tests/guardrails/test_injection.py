@@ -54,7 +54,7 @@ def test_score_debug_log_is_content_free(caplog) -> None:
 
     assert value >= 0.9
     assert spans
-    assert "Injection score computed" in caplog.text
+    assert "Injection assessment completed" in caplog.text
     assert "ignore all previous instructions" not in caplog.text
     assert "reveal private data" not in caplog.text
 
@@ -80,10 +80,10 @@ def test_block_decision_debug_log_is_content_free(caplog) -> None:
         blocked = is_blocked(0.8, threshold=0.75, mode="block")
 
     assert blocked is True
-    assert "Injection block decision" in caplog.text
+    assert "Injection policy evaluated" in caplog.text
     assert "mode=block" in caplog.text
-    assert "threshold=0.7500" in caplog.text
-    assert "score=0.8000" in caplog.text
+    assert "threshold=0.75" in caplog.text
+    assert "score=0.80" in caplog.text
     assert "blocked=True" in caplog.text
 
 
@@ -93,4 +93,3 @@ def test_unknown_mode_warning_is_content_free(caplog) -> None:
 
     assert blocked is True
     assert "Unknown injection mode; failing closed" in caplog.text
-    assert "mode=typo_mode" in caplog.text

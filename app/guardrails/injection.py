@@ -85,7 +85,7 @@ def score(text: str) -> tuple[float, list[str]]:
             flagged.append(match.group(0)[:120])
             max_score = max(max_score, weight)
     logger.debug(
-        "Injection score computed; matched_signals=%d max_score=%.2f",
+        "Injection assessment completed; matched_signals=%d max_score=%.2f",
         len(flagged),
         max_score,
     )
@@ -98,11 +98,11 @@ def is_blocked(injection_score: float, threshold: float, mode: str) -> bool:
     elif mode == "block":
         blocked = injection_score >= threshold
     else:
-        logger.warning("Unknown injection mode; failing closed. mode=%s", mode)
+        logger.warning("Unknown injection mode; failing closed.")
         blocked = True
 
     logger.debug(
-        "Injection block decision; mode=%s threshold=%.4f score=%.4f blocked=%s",
+        "Injection policy evaluated; mode=%s threshold=%.2f score=%.2f blocked=%s",
         mode,
         threshold,
         injection_score,

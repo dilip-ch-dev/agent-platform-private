@@ -60,8 +60,15 @@ class TestConfig:
         with pytest.raises(ValidationError):
             Config()
 
-    @pytest.mark.parametrize("threshold", ["-0.1", "1.1"])
+    @pytest.mark.parametrize("threshold", ["-0.01", "1.01"])
     def test_rejects_invalid_injection_threshold(self, monkeypatch, threshold) -> None:
         monkeypatch.setenv("INJECTION_THRESHOLD", threshold)
         with pytest.raises(ValidationError):
             Config()
+
+    @pytest.mark.parametrize("threshold", ["0.0", "1.0"])
+    def test_accepts_injection_threshold_boundaries(
+        self, monkeypatch, threshold
+    ) -> None:
+        monkeypatch.setenv("INJECTION_THRESHOLD", threshold)
+        assert Config().injection_threshold == float(threshold)
