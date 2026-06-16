@@ -7,7 +7,6 @@ import pytest
 from app.rag.chunker import chunk_text
 from app.rag.ingest import (
     CsvExtractor,
-    TxtExtractor,
     build_chunks,
     extract,
     extract_csv,
