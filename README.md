@@ -1,6 +1,6 @@
 # agent-platform
 
-Reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
+Reusable Python-first trusted-agent skeleton
 
 ## ContextDiff MVP
 
