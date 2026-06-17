@@ -2,6 +2,18 @@
 
 Reusable Python-first trusted-agent skeleton for Buildathon Dallas 2026.
 
+## ContextDiff MVP
+
+ContextDiff is a deterministic release gate for RAG answers when source
+documents change. It compares corpus version A with version B, maps changed
+source units to affected evaluation questions, generates targeted probes,
+reruns the same retrieval and answer path against both versions, and emits
+`PASS`, `REVIEW`, or `BLOCK` with passage-level evidence.
+
+The seeded demo changes the refund policy from 30 days to 14 days while a
+legacy 30-day cache passage remains retrievable in version B. The canonical
+demo must return `Release status: BLOCK`.
+
 ## What we are building
 
 A provider-agnostic agent platform with:
@@ -78,9 +90,28 @@ uv run python ui/app.py
 # Smoke test
 uv run python scripts/smoke.py
 
+# ContextDiff canonical demo export
+uv run python scripts/contextdiff_demo.py
+
 # Tests
 uv run pytest
 ```
+
+## ContextDiff API
+
+```bash
+# Run the canonical seeded demo
+curl http://127.0.0.1:8000/contextdiff/demo
+
+# Run with a custom corpus/eval payload
+curl -X POST http://127.0.0.1:8000/contextdiff/run \
+  -H "Content-Type: application/json" \
+  --data @eval/contextdiff_seed.json
+```
+
+The API response is a structured JSON report and includes a readable
+`html_report` string. `uv run python scripts/contextdiff_demo.py` writes both
+formats under `data/audit/contextdiff_demo/`, which is ignored by git.
 
 ## Dev vs production
 

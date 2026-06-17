@@ -2,6 +2,9 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 
+from app.contextdiff.demo import run_seed_demo
+from app.contextdiff.service import run_contextdiff
+from packages.contracts.contextdiff import ContextDiffReport, ContextDiffRequest
 from packages.contracts.schemas import (
     AgentRequest,
     AgentResponse,
@@ -33,3 +36,13 @@ def ask(request: AgentRequest) -> AgentResponse:
             )
         ],
     )
+
+
+@app.post("/contextdiff/run", response_model=ContextDiffReport)
+def contextdiff_run(request: ContextDiffRequest) -> ContextDiffReport:
+    return run_contextdiff(request)
+
+
+@app.get("/contextdiff/demo", response_model=ContextDiffReport)
+def contextdiff_demo() -> ContextDiffReport:
+    return run_seed_demo()
