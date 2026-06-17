@@ -1,0 +1,171 @@
+{
+  "corpus_a": [
+    {
+      "unit_id": "a_refund_window",
+      "version": "A",
+      "source_file": "policy_vA/refunds.md",
+      "lineage_id": "refund_window",
+      "text": "Refund policy: Refunds are available for 30 days after purchase.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "refunds"
+      }
+    },
+    {
+      "unit_id": "a_shipping_speed",
+      "version": "A",
+      "source_file": "policy_vA/shipping.md",
+      "lineage_id": "shipping_speed",
+      "text": "Shipping policy: Standard shipping takes 5 business days.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "shipping"
+      }
+    },
+    {
+      "unit_id": "a_warranty_period",
+      "version": "A",
+      "source_file": "policy_vA/warranty.md",
+      "lineage_id": "warranty_period",
+      "text": "Warranty policy: Hardware repairs are covered for 1 year.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "warranty"
+      }
+    }
+  ],
+  "corpus_b": [
+    {
+      "unit_id": "b_stale_refund_cache",
+      "version": "B",
+      "source_file": "policy_vB/cache/legacy_refunds.md",
+      "lineage_id": "legacy_refund_cache",
+      "text": "Legacy cache: Refunds are available for 30 days after purchase.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "cache",
+        "stale_of_lineage_id": "refund_window",
+        "stale_of_unit_id": "a_refund_window",
+        "retrieval_bias": "0.02"
+      }
+    },
+    {
+      "unit_id": "b_refund_window",
+      "version": "B",
+      "source_file": "policy_vB/refunds.md",
+      "lineage_id": "refund_window",
+      "text": "Refund policy: Refunds are available for 14 days after purchase.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "refunds"
+      }
+    },
+    {
+      "unit_id": "b_shipping_speed",
+      "version": "B",
+      "source_file": "policy_vB/shipping.md",
+      "lineage_id": "shipping_speed",
+      "text": "Shipping policy: Standard shipping takes 5 business days.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "shipping"
+      }
+    },
+    {
+      "unit_id": "b_warranty_period",
+      "version": "B",
+      "source_file": "policy_vB/warranty.md",
+      "lineage_id": "warranty_period",
+      "text": "Warranty policy: Hardware repairs are covered for 1 year.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "warranty"
+      }
+    },
+    {
+      "unit_id": "b_holiday_returns",
+      "version": "B",
+      "source_file": "policy_vB/holiday_returns.md",
+      "lineage_id": "holiday_returns",
+      "text": "Holiday policy: Gifts bought in December can be exchanged until January 15, 2027.",
+      "locator": {
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "row": null
+      },
+      "metadata": {
+        "section": "holiday"
+      }
+    }
+  ],
+  "evaluation_set": [
+    {
+      "query_id": "q_refund_window",
+      "question": "How many days are refunds available after purchase?",
+      "expected_lineage_ids": [
+        "refund_window"
+      ],
+      "source": "seeded"
+    },
+    {
+      "query_id": "q_refund_after_two_weeks",
+      "question": "Can a customer get a refund 20 days after purchase?",
+      "expected_lineage_ids": [
+        "refund_window"
+      ],
+      "source": "seeded"
+    },
+    {
+      "query_id": "q_shipping_speed",
+      "question": "How long does standard shipping take?",
+      "expected_lineage_ids": [
+        "shipping_speed"
+      ],
+      "source": "seeded"
+    },
+    {
+      "query_id": "q_warranty_period",
+      "question": "How long are hardware repairs covered?",
+      "expected_lineage_ids": [
+        "warranty_period"
+      ],
+      "source": "seeded"
+    }
+  ]
+}

@@ -25,6 +25,15 @@ def main() -> None:
     assert isinstance(payload["trace_id"], str) and payload["trace_id"]
     assert isinstance(payload["citations"], list)
 
+    demo_response = client.get("/contextdiff/demo")
+    assert demo_response.status_code == 200, demo_response.text
+    demo_payload = demo_response.json()
+    assert demo_payload["status"] == "BLOCK"
+    assert demo_payload["summary"]["changed_statements"] >= 1
+    assert demo_payload["summary"]["affected_queries"] >= 1
+    assert demo_payload["summary"]["stale_retrievals"] >= 1
+    assert "Release status: BLOCK" in demo_payload["html_report"]
+
     print("Smoke test passed.")
 
 
